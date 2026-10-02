@@ -73,10 +73,22 @@ async function boot(){await ensureAgents();await loadStats();await loadAgents();
 async function saveMessage(role,content){const cid=await ensureConversation();const {error}=await sb.from('messages').insert({conversation_id:cid,user_id:user.id,role,content,metadata:{source:'command-center'}});if(error)throw error}
 async function renderAction(a){
   const el=document.createElement('div');el.className='action-card';el.dataset.id=a.id;
-  el.innerHTML='<div class="action-state">Approval requested · '+esc(a.type)+'</div><p>'+esc(a.description)+'</p><div class="action-actions"><button data-action="approve">Approve</button><button class="reject" data-action="reject">Reject</button></div>';
+  el.innerHTML='<div class="action-state">Approval requested · '+esc(a.type)+'</div><p>'+esc(a.description)+'</p><div class="action-actions"><button data-action="approve">Approve & execute</button><button class="reject" data-action="reject">Reject</button></div>';
   $('feed').prepend(el);
-  el.querySelector('[data-action="approve"]').onclick=()=>resolveAction(a.id,'approved',el);
+  el.querySelector('[data-action="approve"]').onclick=()=>executeAction(a.id,el);
   el.querySelector('[data-action="reject"]').onclick=()=>resolveAction(a.id,'rejected',el);
+}
+async function executeAction(id,el){
+  el.querySelector('[data-action="approve"]').disabled=true;
+  el.querySelector('[data-action="reject"]').disabled=true;
+  el.innerHTML='<div class="action-state">Executing…</div>';
+  const {data,error}=await sb.functions.invoke('orion-execute',{body:{actionRequestId:id}});
+  if(error || !data?.ok){
+    el.innerHTML='<div class="action-state">Execution failed</div><p>'+esc(data?.error||error?.message||'Unknown execution error.')+'</p>';
+    return;
+  }
+  el.innerHTML='<div class="action-state">Executed</div><p>ORION completed the approved action.</p>';
+  await loadStats();
 }
 async function resolveAction(id,status,el){
   const {error}=await sb.from('action_requests').update({status,updated_at:new Date().toISOString()}).eq('id',id).eq('user_id',user.id);
