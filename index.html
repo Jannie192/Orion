@@ -1,70 +1,94 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>ORION — Operational Reasoning & Intelligence Orchestration Network</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#07090d;--panel:#0d1118;--panel2:#111722;--line:#1e2937;--text:#edf3fb;--muted:#8491a3;--accent:#8bb8ff;--good:#72e0ad;--warn:#ffd37a}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#14233b 0,#07090d 38%);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}button,input{font:inherit}.shell{max-width:1100px;margin:auto;padding:18px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}.brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.08em}.orb{width:34px;height:34px;border:1px solid #5677a4;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 25px #4b79b833}.orb:after{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 16px var(--accent)}.status{font-size:12px;color:var(--good);display:flex;align-items:center;gap:7px}.dot{width:7px;height:7px;background:var(--good);border-radius:50%;box-shadow:0 0 10px var(--good)}.hero{padding:22px 4px 28px}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:.14em;text-transform:uppercase}.hero h1{font-size:clamp(34px,8vw,64px);line-height:.98;margin:9px 0 13px;letter-spacing:-.045em}.hero p{max-width:650px;color:var(--muted);font-size:16px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{background:linear-gradient(145deg,#0f151e,#0a0e14);border:1px solid var(--line);border-radius:18px;padding:17px;box-shadow:0 18px 60px #0005}.label{color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase}.value{font-size:22px;font-weight:750;margin-top:6px}.sub{color:var(--muted);font-size:13px;margin-top:5px}.command{margin-top:14px;display:flex;gap:10px}.command input{flex:1;min-width:0;background:#0b1017;border:1px solid var(--line);color:var(--text);padding:15px 16px;border-radius:14px;outline:none}.command input:focus{border-color:#45658d}.btn{border:1px solid #36516f;background:#132033;color:#dcecff;border-radius:14px;padding:0 19px;font-weight:700;cursor:pointer}.btn:hover{background:#182941}.section{margin-top:28px}.section h2{font-size:17px;margin:0 0 10px}.agents{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.agent{padding:15px;border:1px solid var(--line);border-radius:15px;background:#0b1017}.agent strong{display:block;margin-bottom:4px}.agent span{color:var(--muted);font-size:12px}.feed{margin-top:12px}.msg{border-left:2px solid #31445d;padding:10px 13px;color:#b6c1d0}.login{max-width:430px;margin:12vh auto 0}.login .card{padding:24px}.login h1{margin:4px 0 5px}.login p{color:var(--muted);margin-top:0}.login input{width:100%;padding:13px;margin:6px 0;background:#080c12;border:1px solid var(--line);border-radius:12px;color:white}.login .btn{width:100%;padding:13px;margin-top:8px}.tiny{font-size:11px;color:var(--muted);margin-top:12px}.hidden{display:none!important}.error{color:#ff9a9a;font-size:13px;margin-top:8px}.userbar{color:var(--muted);font-size:12px}.logout{background:transparent;border:0;color:var(--muted);cursor:pointer;margin-left:10px}@media(max-width:760px){.grid{grid-template-columns:1fr}.agents{grid-template-columns:repeat(2,1fr)}.hero{padding-top:10px}.command{flex-direction:column}.btn{height:48px}.shell{padding:14px}}
+:root{--bg:#06080c;--panel:#0c1118;--panel2:#101722;--line:#1d2938;--text:#eef4fc;--muted:#8190a4;--accent:#8bb8ff;--good:#72e0ad;--warn:#ffd37a;--danger:#ff8f9a}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(circle at 50% -10%,#172844 0,#06080c 42%);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}
+.shell{max-width:1180px;margin:auto;padding:18px}.hidden{display:none!important}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.brand{display:flex;align-items:center;gap:11px;font-weight:850;letter-spacing:.1em}.orb{width:34px;height:34px;border:1px solid #5677a4;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 25px #4b79b833}.orb:after{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 16px var(--accent)}
+.status{font-size:11px;color:var(--good);display:inline-flex;align-items:center;gap:7px}.dot{width:7px;height:7px;background:var(--good);border-radius:50%;box-shadow:0 0 10px var(--good)}.logout{background:transparent;border:0;color:var(--muted);margin-left:12px}
+.hero{padding:18px 4px 25px}.eyebrow{color:var(--accent);font-size:11px;letter-spacing:.15em;text-transform:uppercase}.hero h1{font-size:clamp(34px,7vw,62px);line-height:.98;margin:9px 0 12px;letter-spacing:-.05em}.hero p{max-width:700px;color:var(--muted);font-size:15px}
+.command{display:flex;gap:10px;margin-top:18px}.command input{flex:1;min-width:0;background:#090e15;border:1px solid var(--line);color:var(--text);padding:15px 16px;border-radius:14px;outline:0}.command input:focus{border-color:#4b6e9d}.btn{border:1px solid #36516f;background:#132033;color:#dcecff;border-radius:14px;padding:0 19px;font-weight:750}.btn:hover{background:#192a42}.btn:disabled{opacity:.5;cursor:wait}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}.card{background:linear-gradient(145deg,#0f151e,#090d13);border:1px solid var(--line);border-radius:17px;padding:16px;box-shadow:0 18px 60px #0005}.label{color:var(--muted);font-size:10px;letter-spacing:.13em;text-transform:uppercase}.value{font-size:21px;font-weight:780;margin-top:5px}.sub{color:var(--muted);font-size:12px;margin-top:4px}
+.layout{display:grid;grid-template-columns:1.35fr .65fr;gap:12px;margin-top:12px}.section{margin-top:12px}.section h2{font-size:16px;margin:0 0 9px}.agents{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.agent{padding:13px;border:1px solid var(--line);border-radius:14px;background:#0a0f16}.agent strong{display:flex;justify-content:space-between;margin-bottom:3px}.agent span{color:var(--muted);font-size:11px}.agent i{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block;box-shadow:0 0 8px var(--good)}
+.feed{min-height:290px;max-height:480px;overflow:auto}.msg{border-left:2px solid #31445d;padding:9px 12px;margin-bottom:10px;color:#b8c4d4}.msg.you{border-left-color:#5d7fae;color:#e2eafa}.msg.system{border-left-color:var(--good)}.msg .meta{font-size:10px;color:var(--muted);margin-bottom:2px;text-transform:uppercase;letter-spacing:.08em}.msg strong{color:#eef4fc}.side-list{display:grid;gap:7px}.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #17202c}.row:last-child{border-bottom:0}.row span{color:var(--muted);font-size:12px}.pill{font-size:10px;padding:3px 7px;border:1px solid var(--line);border-radius:99px;color:#b7c5d8}
+.login{max-width:430px;margin:12vh auto 0}.login .card{padding:25px}.login h1{margin:5px 0}.login p{color:var(--muted);margin-top:0}.login input{width:100%;padding:13px;margin:6px 0;background:#080c12;border:1px solid var(--line);border-radius:12px;color:white;outline:0}.login .btn{width:100%;height:46px;margin-top:8px}.tiny{font-size:11px;color:var(--muted);margin-top:12px}.error{color:#ff9a9a;font-size:13px;margin-top:8px}.ok{color:var(--good);font-size:13px;margin-top:8px}
+@media(max-width:820px){.grid{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.hero{padding-top:8px}}@media(max-width:560px){.grid,.agents{grid-template-columns:1fr 1fr}.command{flex-direction:column}.btn{height:47px}.shell{padding:13px}}
 </style>
 </head>
 <body>
-<div id="login" class="shell login">
-  <div class="card">
-    <div class="brand"><div class="orb"></div>ORION</div>
-    <h1>Command center.</h1>
-    <p>Sign in to access your personal intelligence network.</p>
-    <input id="email" type="email" placeholder="Email" autocomplete="email">
-    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
-    <button class="btn" id="signin">Sign in</button>
-    <button class="btn" id="signup" style="margin-top:8px;background:transparent">Create account</button>
-    <div id="authmsg" class="error"></div>
-    <div class="tiny">ORION v0.3 · personal-first · approval-based autonomy</div>
-  </div>
-</div>
-
-<div id="app" class="hidden">
-<div class="shell">
-  <div class="top">
-    <div class="brand"><div class="orb"></div>ORION</div>
-    <div><span class="status"><i class="dot"></i> CORE ONLINE</span><button class="logout" id="logout">Sign out</button></div>
-  </div>
-  <section class="hero">
-    <div class="eyebrow">Operational Reasoning & Intelligence Orchestration Network</div>
-    <h1 id="greeting">Good to see you.</h1>
-    <p>Your command center for memory, goals, projects, agents and approved actions. Start with a command below.</p>
-    <div class="command"><input id="command" placeholder="What should we work on?"/><button class="btn" id="run">Execute</button></div>
-  </section>
-  <section class="grid">
-    <div class="card"><div class="label">Core</div><div class="value">Online</div><div class="sub">Reasoning layer ready</div></div>
-    <div class="card"><div class="label">Autonomy</div><div class="value">Approval required</div><div class="sub">No external actions without you</div></div>
-    <div class="card"><div class="label">Memory</div><div class="value" id="memoryCount">—</div><div class="sub">Stored personal context</div></div>
-  </section>
-  <section class="section"><h2>Agents</h2><div class="agents">
-    <div class="agent"><strong>SCOUT</strong><span>Prospects & opportunities</span></div>
-    <div class="agent"><strong>RESEARCHER</strong><span>Research & intelligence</span></div>
-    <div class="agent"><strong>SALES</strong><span>Outreach & follow-ups</span></div>
-    <div class="agent"><strong>ANALYST</strong><span>Analysis & reports</span></div>
-  </div></section>
-  <section class="section"><h2>Command feed</h2><div id="feed" class="card feed"><div class="msg">ORION initialized. Waiting for your first command.</div></div></section>
+<div id="login" class="shell login"><div class="card">
+<div class="brand"><div class="orb"></div>ORION</div>
+<h1>Command center.</h1><p>Sign in to access your personal intelligence network.</p>
+<input id="email" type="email" placeholder="Email" autocomplete="email">
+<input id="password" type="password" placeholder="Password" autocomplete="current-password">
+<button class="btn" id="signin">Sign in</button><button class="btn" id="signup" style="margin-top:8px;background:transparent">Create account</button>
+<div id="authmsg" class="error"></div><div class="tiny">ORION v0.4 · persistent core · approval-based autonomy</div>
 </div></div>
+
+<div id="app" class="hidden"><div class="shell">
+<div class="top"><div class="brand"><div class="orb"></div>ORION</div><div><span class="status"><i class="dot"></i> CORE ONLINE</span><button class="logout" id="logout">Sign out</button></div></div>
+<section class="hero"><div class="eyebrow">Operational Reasoning & Intelligence Orchestration Network</div>
+<h1 id="greeting">Good to see you.</h1><p>One command center for memory, goals, projects, tasks and agents. ORION now persists your command history to your private workspace.</p>
+<div class="command"><input id="command" placeholder="Try: remember that my main goal is to build ORION..."><button class="btn" id="run">Execute</button></div></section>
+
+<section class="grid">
+<div class="card"><div class="label">Core</div><div class="value">Online</div><div class="sub">Persistent command layer</div></div>
+<div class="card"><div class="label">Autonomy</div><div class="value">Approval required</div><div class="sub">External actions stay gated</div></div>
+<div class="card"><div class="label">Memory</div><div class="value" id="memoryCount">—</div><div class="sub">Private stored memories</div></div>
+<div class="card"><div class="label">Tasks</div><div class="value" id="taskCount">—</div><div class="sub">Open tasks</div></div>
+</section>
+
+<div class="layout">
+<div><section class="section"><h2>Command feed</h2><div id="feed" class="card feed"></div></section>
+<section class="section"><h2>Agents</h2><div id="agents" class="agents"></div></section></div>
+<div><section class="section"><h2>Workspace</h2><div class="card side-list">
+<div class="row"><span>Conversations</span><b id="conversationCount">—</b></div>
+<div class="row"><span>Goals</span><b id="goalCount">—</b></div>
+<div class="row"><span>Projects</span><b id="projectCount">—</b></div>
+<div class="row"><span>Open tasks</span><b id="taskSideCount">—</b></div>
+</div></section>
+<section class="section"><h2>Core status</h2><div class="card side-list">
+<div class="row"><span>Authentication</span><span class="pill">SECURE</span></div>
+<div class="row"><span>Database</span><span class="pill">SUPABASE</span></div>
+<div class="row"><span>Memory</span><span class="pill">PERSISTENT</span></div>
+<div class="row"><span>Action policy</span><span class="pill">APPROVAL</span></div>
+</div></section></div>
+</div>
+</div></div>
+
 <script>
 const SUPABASE_URL='https://bhgnzdtjapdnwrybtlwq.supabase.co';
 const SUPABASE_KEY='sb_publishable_GtTWrR0i4fnq12EgfsnGyQ_eyHsdT6a';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const $=id=>document.getElementById(id);
-function showApp(user){$('login').classList.add('hidden');$('app').classList.remove('hidden');$('greeting').textContent=`Good to see you${user?.email?'':' again'}.`;loadMemory();}
-function showLogin(){$('app').classList.add('hidden');$('login').classList.remove('hidden')}
-async function loadMemory(){const {count,error}=await sb.from('memories').select('*',{count:'exact',head:true});if(error){$('memoryCount').textContent='—';console.warn('Memory load failed:',error.message);return}$('memoryCount').textContent=count??0}
-$('signin').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||!password){$('authmsg').textContent='Enter your email and password.';return}const {error}=await sb.auth.signInWithPassword({email,password});$('authmsg').textContent=error?error.message:'';if(!error)showApp()};
-$('signup').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||!password){$('authmsg').textContent='Enter an email and password.';return}if(password.length<6){$('authmsg').textContent='Password must be at least 6 characters.';return}const {data,error}=await sb.auth.signUp({email,password});$('authmsg').textContent=error?error.message:(data.session?'Account created and signed in.':'Account created. Check your email if confirmation is enabled.')};
-$('logout').onclick=async()=>{await sb.auth.signOut();showLogin()};
-$('run').onclick=()=>{const v=$('command').value.trim();if(!v)return;const el=document.createElement('div');el.className='msg';el.innerHTML='<strong>YOU</strong><br>'+v.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));$('feed').prepend(el);$('command').value='';};
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);const $=id=>document.getElementById(id);
+let user=null,conversationId=null;
+const esc=v=>String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+function showApp(u){user=u;$('login').classList.add('hidden');$('app').classList.remove('hidden');$('greeting').textContent='Good to see you.';boot();}
+function showLogin(){$('app').classList.add('hidden');$('login').classList.remove('hidden');user=null;conversationId=null}
+function addFeed(role,content,kind=''){const el=document.createElement('div');el.className='msg '+kind;el.innerHTML='<div class="meta">'+esc(role)+'</div>'+esc(content).replace(/\n/g,'<br>');$('feed').prepend(el)}
+async function ensureConversation(){if(conversationId)return conversationId;const {data,error}=await sb.from('conversations').insert({user_id:user.id,title:'ORION Command Center'}).select('id').single();if(error)throw error;conversationId=data.id;return conversationId}
+async function ensureAgents(){const {data,error}=await sb.from('agents').select('id,name,slug,description,enabled').order('name');if(error)return; if(!data.length){const defaults=[['SCOUT','scout','Prospects & opportunities'],['RESEARCHER','researcher','Research & intelligence'],['SALES','sales','Outreach & follow-ups'],['ANALYST','analyst','Analysis & reports']];await sb.from('agents').insert(defaults.map(x=>({user_id:user.id,name:x[0],slug:x[1],description:x[2],enabled:true,config:{}})))}}
+async function loadStats(){const q=async(table,filter)=>{let x=sb.from(table).select('*',{count:'exact',head:true});if(filter)x=x.eq('user_id',user.id);const r=await x;return r.count??0};$('memoryCount').textContent=await q('memories',true);$('taskCount').textContent=await q('tasks',true);$('taskSideCount').textContent=await q('tasks',true);$('goalCount').textContent=await q('goals',true);$('projectCount').textContent=await q('projects',true);$('conversationCount').textContent=await q('conversations',true)}
+async function loadAgents(){const {data}=await sb.from('agents').select('name,slug,description,enabled').order('name');$('agents').innerHTML=(data||[]).map(a=>'<div class="agent"><strong>'+esc(a.name)+' <i></i></strong><span>'+esc(a.description||'Core agent')+'</span></div>').join('')}
+async function loadMessages(){if(!conversationId)return;const {data}=await sb.from('messages').select('role,content,created_at').eq('conversation_id',conversationId).order('created_at',{ascending:false}).limit(40);$('feed').innerHTML='';(data||[]).forEach(m=>addFeed(m.role,m.content,m.role==='user'?'you':''));if(!data?.length)addFeed('ORION','Core initialized. Your commands will now be persisted in your private workspace.','system')}
+async function boot(){await ensureAgents();await loadStats();await loadAgents();try{await ensureConversation();await loadMessages()}catch(e){addFeed('ORION','Workspace initialized, but conversation persistence reported: '+e.message,'system')}}
+async function saveMessage(role,content){const cid=await ensureConversation();const {error}=await sb.from('messages').insert({conversation_id:cid,user_id:user.id,role,content,metadata:{source:'command-center'}});if(error)throw error}
+async function handleCommand(v){const low=v.toLowerCase();await saveMessage('user',v);addFeed('YOU',v,'you');
+if(low.startsWith('remember ')){const content=v.slice(9).trim();const {error}=await sb.from('memories').insert({user_id:user.id,category:'general',content,importance:5,source:'command',metadata:{}});if(error)throw error;await saveMessage('assistant','Memory stored. I will treat this as part of your private ORION context.');addFeed('ORION','Memory stored. I will treat this as part of your private ORION context.','system')}
+else if(low.startsWith('goal ')){const title=v.slice(5).trim();const {error}=await sb.from('goals').insert({user_id:user.id,title,status:'active'});if(error)throw error;await saveMessage('assistant','Goal created: '+title);addFeed('ORION','Goal created: '+title,'system')}
+else if(low.startsWith('task ')){const title=v.slice(5).trim();const {error}=await sb.from('tasks').insert({user_id:user.id,title,status:'todo',priority:3});if(error)throw error;await saveMessage('assistant','Task created: '+title);addFeed('ORION','Task created: '+title,'system')}
+else{const reply='Command captured and persisted. The next ORION module is the secure AI reasoning layer, which will turn this command into context-aware responses and approved tool actions.';await saveMessage('assistant',reply);addFeed('ORION',reply,'system')}
+await loadStats()}
+$('signin').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||!password){$('authmsg').textContent='Enter your email and password.';return}const {data,error}=await sb.auth.signInWithPassword({email,password});$('authmsg').textContent=error?error.message:'';if(!error)showApp(data.user)}
+$('signup').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||!password){$('authmsg').textContent='Enter an email and password.';return}if(password.length<6){$('authmsg').textContent='Password must be at least 6 characters.';return}const {data,error}=await sb.auth.signUp({email,password});$('authmsg').className=error?'error':'ok';$('authmsg').textContent=error?error.message:(data.session?'Account created and signed in.':'Account created. Check your email if confirmation is enabled.');if(!error&&data.session)showApp(data.user)}
+$('logout').onclick=async()=>{await sb.auth.signOut();showLogin()}
+$('run').onclick=async()=>{const v=$('command').value.trim();if(!v)return;$('run').disabled=true;try{await handleCommand(v);$('command').value=''}catch(e){addFeed('ORION','Command failed: '+e.message,'system')}finally{$('run').disabled=false}}
 $('command').addEventListener('keydown',e=>{if(e.key==='Enter')$('run').click()});
-sb.auth.getSession().then(({data:{session},error})=>{if(error){console.error('Session error:',error.message);showLogin();return}session?showApp(session.user):showLogin();});
+sb.auth.getSession().then(({data:{session}})=>session?showApp(session.user):showLogin());
 sb.auth.onAuthStateChange((_event,session)=>session?showApp(session.user):showLogin());
 </script>
-</body>
-</html>
+</body></html>
