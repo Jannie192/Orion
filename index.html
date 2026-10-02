@@ -67,10 +67,26 @@ function addFeed(role,content,kind=''){const el=document.createElement('div');el
 function renderRouting(reasoning){const agent=reasoning?.selectedAgent;const plan=Array.isArray(reasoning?.agentPlan)?reasoning.agentPlan:[];if(!agent&&!plan.length)return;const el=document.createElement('div');el.className='msg';const steps=plan.map((p,i)=>'<div class="row"><span>'+(i+1)+'. '+esc(p.agent||'agent')+'</span><b class="pill">'+esc(p.purpose||'Assigned')+'</b></div>').join('');el.innerHTML='<div class="meta">ORION ROUTING</div><div><strong>Lead agent:</strong> '+esc(agent||plan[0]?.agent||'auto')+'</div>'+(steps?'<div class="side-list" style="margin-top:8px">'+steps+'</div>':'');$('feed').prepend(el)}
 async function ensureConversation(){if(conversationId)return conversationId;const {data,error}=await sb.from('conversations').insert({user_id:user.id,title:'ORION Command Center'}).select('id').single();if(error)throw error;conversationId=data.id;return conversationId}
 async function ensureAgents(){const {data,error}=await sb.from('agents').select('id,name,slug,description,enabled').order('name');if(error)return; if(!data.length){const defaults=[['SCOUT','scout','Prospects & opportunities'],['RESEARCHER','researcher','Research & intelligence'],['SALES','sales','Outreach & follow-ups'],['ANALYST','analyst','Analysis & reports']];await sb.from('agents').insert(defaults.map(x=>({user_id:user.id,name:x[0],slug:x[1],description:x[2],enabled:true,config:{}})))}}
+async function ensureTools(){
+ const {data}=await sb.from('tools').select('id,slug').eq('user_id',user.id);
+ const existing=new Set((data||[]).map(x=>x.slug));
+ const defaults=[
+  ['memory','Memory','Store and retrieve durable user context','Internal ORION memory',true],
+  ['tasks','Tasks','Create and manage tasks','Internal ORION task management',true],
+  ['goals','Goals','Create and manage goals','Internal ORION goal management',true],
+  ['projects','Projects','Create and manage projects','Internal ORION project management',true],
+  ['github','GitHub','Repository and code operations','Future external connector',false],
+  ['vercel','Vercel','Deployment and project operations','Future external connector',false],
+  ['browser','Browser','Controlled web/browser automation','Future external connector',false],
+  ['research','Research','External research and source gathering','Future external connector',false]
+ ];
+ const missing=defaults.filter(x=>!existing.has(x[0])).map(x=>({user_id:user.id,slug:x[0],name:x[1],description:x[2],enabled:x[4],config:{status:x[4]?'active':'planned',note:x[3]}}));
+ if(missing.length) await sb.from('tools').insert(missing);
+}
 async function loadStats(){const q=async(table)=>{const r=await sb.from(table).select('*',{count:'exact',head:true}).eq('user_id',user.id);return r.count??0};$('memoryCount').textContent=await q('memories');$('taskSideCount').textContent=await q('tasks');$('goalCount').textContent=await q('goals');$('projectCount').textContent=await q('projects')}
 async function loadAgents(){const {data}=await sb.from('agents').select('name,slug,description,enabled').order('name');$('agents').innerHTML=(data||[]).map(a=>'<div class="agent"><strong>'+esc(a.name)+' <i></i></strong><span>'+esc(a.description||'Core agent')+'</span></div>').join('')}
 async function loadMessages(){if(!conversationId)return;const {data}=await sb.from('messages').select('role,content,created_at').eq('conversation_id',conversationId).order('created_at',{ascending:false}).limit(40);$('feed').innerHTML='';(data||[]).forEach(m=>addFeed(m.role,m.content,m.role==='user'?'you':''));if(!data?.length)addFeed('ORION','Core initialized. Your commands will now be persisted in your private workspace.','system')}
-async function boot(){await ensureAgents();await loadStats();await loadAgents();try{await ensureConversation();await loadMessages()}catch(e){addFeed('ORION','Workspace initialized, but conversation persistence reported: '+e.message,'system')}}
+async function boot(){await ensureAgents();await ensureTools();await loadStats();await loadAgents();try{await ensureConversation();await loadMessages()}catch(e){addFeed('ORION','Workspace initialized, but conversation persistence reported: '+e.message,'system')}}
 async function saveMessage(role,content){const cid=await ensureConversation();const {error}=await sb.from('messages').insert({conversation_id:cid,user_id:user.id,role,content,metadata:{source:'command-center'}});if(error)throw error}
 async function renderAction(a){
   const el=document.createElement('div');el.className='action-card';el.dataset.id=a.id;
