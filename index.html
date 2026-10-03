@@ -486,7 +486,10 @@ async function initializeAuth(){
 }
 sb.auth.onAuthStateChange((event,session)=>{
  if(event==='PASSWORD_RECOVERY'){showPasswordRecovery();return}
- if(session?.user){void showApp(session.user);return}
+ // IMPORTANT: Supabase warns against making async Supabase calls from inside
+ // the auth-state callback because it can deadlock the client. Defer app loading
+ // until this callback has returned; signIn() handles the immediate login path.
+ if(session?.user){setTimeout(()=>{if(!authBusy)void showApp(session.user)},0);return}
  if(event==='SIGNED_OUT' && !authBusy)showLogin();
 });
 window.__ORION_MAIN_READY=true;
