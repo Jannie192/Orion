@@ -342,25 +342,6 @@ function showPasswordRecovery(){
  $('authmsg').className='ok';$('authmsg').textContent='Password reset link verified.';
  $('updatePassword').onclick=completePasswordReset;
 }
-async function signIn(){
- if(authBusy)return;
- const email=$('email').value.trim(),password=$('password').value;
- $('authmsg').className='error';
- if(!email||!password){$('authmsg').textContent='Enter your email and password.';return}
- authBusy=true;$('signin').disabled=true;$('signin').textContent='Signing in…';$('authmsg').textContent='Contacting ORION authentication…';
- try{
-  const {data,error}=await sb.auth.signInWithPassword({email,password});
-  if(error)throw error;
-  if(!data?.session||!data?.user)throw new Error('Authentication succeeded but no session was returned.');
-  $('authmsg').className='ok';$('authmsg').textContent='Signed in. Loading ORION…';
-  setTimeout(()=>void showApp(data.user),0);
- }catch(error){
-  console.error('ORION sign-in failed',error);
-  $('authmsg').textContent=error?.message||'Sign-in failed. Check your email and password.';
- }finally{
-  authBusy=false;$('signin').disabled=false;$('signin').textContent='Sign in';
- }
-}
 async function signUp(){
  if(authBusy)return;
  const email=$('email').value.trim(),password=$('password').value;
