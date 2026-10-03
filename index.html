@@ -84,7 +84,7 @@
 <button class="tab" data-tab="projectsTab">Projects</button>
 <button class="tab" data-tab="agentsTab">Agents</button>
 <button class="tab" data-tab="toolsTab">Tools & Connectors</button>
-<button class="tab" data-tab="activityTab">Activity</button><button class="tab" data-tab="revenueTab">Revenue Engine</button>
+<button class="tab" data-tab="activityTab">Activity</button><button class="tab" data-tab="revenueTab">Revenue Engine</button><button class="tab" data-tab="researchTab">Research</button>
 </div>
 <div class="tab-panel active" id="tab-command"><div class="layout"><div><section class="section"><h2>Command feed</h2><div id="feed" class="card feed"></div></section><section class="section"><h2>Mission status</h2><div id="missionFeed" class="mission-feed"></div></section></div><div><section class="section"><h2>ORION OS</h2><div class="card side-list"><div class="row"><span>Memory</span><b id="memoryCount">—</b></div><div class="row"><span>Tasks</span><b id="taskSideCount">—</b></div><div class="row"><span>Goals</span><b id="goalCount">—</b></div><div class="row"><span>Projects</span><b id="projectCount">—</b></div><div class="row"><span>Active missions</span><b id="missionCount">—</b></div></div></section></div></div></div>
 <div class="tab-panel" id="tab-missionsTab"><section class="section"><div class="workspace-head"><div><h2 style="margin:0">Missions</h2><div class="workspace-meta">Objectives ORION can plan, execute, delegate and monitor.</div></div><span class="pill">ORION CONTROL</span></div><div id="missionWorkspace" class="mission-feed" style="margin-top:12px"></div></section></div>
@@ -106,6 +106,13 @@
 <section class="section"><div class="workspace-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3>Prospect pipeline</h3><span class="pill" id="revenueOpportunityCount">0 opportunities</span></div><div id="revenuePipeline" class="revenue-list"><div class="empty-state">No revenue prospects yet.</div></div></div></section>
 <section class="section"><div class="workspace-card"><h3>Financial truth</h3><div class="side-list"><div class="row"><span>Revenue recorded</span><b id="revenueSideTotal">R0.00</b></div><div class="row"><span>Expenses recorded</span><b id="expenseTotal">R0.00</b></div><div class="row"><span>Net recorded</span><b id="netSideTotal">R0.00</b></div><div class="row"><span>Open outreach</span><b id="openOutreach">—</b></div></div><p class="sub">Only rows stored in ORION's financial ledger count here.</p></div></section>
 </div>
+</div>
+<div class="tab-panel" id="tab-researchTab">
+<section class="section">
+<div class="workspace-head"><div><div class="workspace-title">Research Memory</div><div class="workspace-meta">Everything ORION researches is retained as structured evidence so you can ask about it later.</div></div><span class="voice-pill">PERSISTENT INTELLIGENCE</span></div>
+<div class="revenue-actions"><button class="tab" id="refreshResearch">Refresh research</button><input id="researchSearch" placeholder="Search companies, findings or topics..." style="flex:1;min-width:220px;background:#080d14;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:9px 11px"></div>
+<div id="researchList" class="revenue-list"><div class="empty-state">No research records yet.</div></div>
+</section>
 </div>
 <div class="tab-panel" id="tab-activityTab"><section class="section"><h2>Activity</h2><p class="sub">A unified stream of ORION, mission and agent events.</p><div id="activityFeed" class="card feed"></div></section></div>
 </div></div>
@@ -249,8 +256,11 @@ async function disconnectConnection(id){
  addFeed('ORION','GitHub connection revoked.','system');await loadConnections();
 }
 window.testConnection=testConnection;window.disconnectConnection=disconnectConnection;
-initTabs();renderMissions();\n$('launchRevenueMission').onclick=launchRevenueMission;$('refreshRevenue').onclick=loadRevenueEngine;
-async function boot(){await ensureAgents();await ensureTools();await ensureAgentTools();await loadStats();await loadAgents();await loadAgentTabs();await loadTools();await loadConnections();await loadMcpActions(); await loadCapabilityRequests();await loadMissions();await loadProjects();await loadAgentEvents();await loadRevenueEngine();try{await ensureConversation();await loadMessages()}catch(e){addFeed('ORION','Workspace initialized, but conversation persistence reported: '+e.message,'system')}}
+initTabs();renderMissions();
+$('launchRevenueMission').onclick=launchRevenueMission;$('refreshRevenue').onclick=loadRevenueEngine;
+$('refreshResearch').onclick=()=>loadResearch($('researchSearch').value);
+$('researchSearch').addEventListener('input',()=>loadResearch($('researchSearch').value));
+async function boot(){await ensureAgents();await ensureTools();await ensureAgentTools();await loadStats();await loadAgents();await loadAgentTabs();await loadTools();await loadConnections();await loadMcpActions(); await loadCapabilityRequests();await loadMissions();await loadProjects();await loadAgentEvents();await loadRevenueEngine();await loadResearch();try{await ensureConversation();await loadMessages()}catch(e){addFeed('ORION','Workspace initialized, but conversation persistence reported: '+e.message,'system')}}
 async function saveMessage(role,content){const cid=await ensureConversation();const {error}=await sb.from('messages').insert({conversation_id:cid,user_id:user.id,role,content,metadata:{source:'command-center'}});if(error)throw error}
 async function renderAction(a){
   const el=document.createElement('div');el.className='action-card';el.dataset.id=a.id;
@@ -380,6 +390,33 @@ async function loadRevenueEngine(){
   const {data:outreach}=await sb.from('orion_outreach').select('status').eq('user_id',user.id).limit(500);$('openOutreach').textContent=(outreach||[]).filter(x=>['draft','approved','sent'].includes(x.status)).length;
  }catch(e){$('revenuePipeline').innerHTML='<div class="empty-state">Revenue engine could not load: '+esc(e.message||'Unknown error')+'</div>';}
 }
+async function loadResearch(query=''){
+ if(!user)return;
+ const box=$('researchList'); if(!box)return;
+ let req=sb.from('orion_research_records').select('id,mission_id,mission_step_id,lead_id,research_type,title,query,summary,findings,evidence,sources,confidence,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(100);
+ const {data,error}=await req;
+ if(error){box.innerHTML='<div class="empty-state">Research memory could not load: '+esc(error.message||'Unknown error')+'</div>';return;}
+ const q=(query||'').toLowerCase().trim();
+ const rows=(data||[]).filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
+ if(!rows.length){box.innerHTML='<div class="empty-state">'+(q?'No research matches that search.':'No research records yet. ORION will retain completed research here.')+'</div>';return;}
+ box.innerHTML=rows.map(r=>{
+   const findings=r.findings&&typeof r.findings==='object'?Object.entries(r.findings).slice(0,6).map(([k,v])=>'<span class="pill">'+esc(k)+': '+esc(typeof v==='string'?v:JSON.stringify(v))+'</span>').join(' '):'';
+   const sources=Array.isArray(r.sources)?r.sources.slice(0,4).map(s=>{const u=typeof s==='string'?s:s?.url;const label=typeof s==='string'?s:(s?.title||s?.url||'source');return u?'<a href="'+esc(u)+'" target="_blank" rel="noopener" style="color:var(--accent);font-size:10px">'+esc(label)+'</a>':''}).join(' · '):'';
+   const confidence=r.confidence==null?'':(' · confidence '+Number(r.confidence).toFixed(0)+'%');
+   return '<div class="lead-row"><div class="lead-head"><strong>'+esc(r.title||'Research record')+'</strong><span class="stage">'+esc(r.status||'completed')+'</span></div><div class="lead-meta">'+esc(r.research_type||'research')+confidence+' · '+new Date(r.created_at).toLocaleString()+'</div><div class="lead-note">'+esc(r.summary||'No summary recorded.')+'</div>'+(findings?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">'+findings+'</div>':'')+(sources?'<div style="margin-top:7px">'+sources+'</div>':'')+'</div>';
+ }).join('');
+}
+async function researchBriefing(query=''){
+ if(!user)return '';
+ let req=sb.from('orion_research_records').select('id,lead_id,title,summary,findings,sources,confidence,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(100);
+ const {data,error}=await req;if(error)throw error;
+ const q=(query||'').toLowerCase().trim();
+ const rows=(data||[]).filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
+ if(!rows.length)return q?'I could not find research matching "'+query+'".':'I have no stored research records yet.';
+ const top=rows.slice(0,8);
+ const lines=top.map((r,i)=>{const f=r.findings&&typeof r.findings==='object'?Object.entries(r.findings).slice(0,3).map(([k,v])=>k+': '+(typeof v==='string'?v:JSON.stringify(v))).join('; '):'';return (i+1)+'. '+r.title+' — '+(r.summary||'No summary.')+(f?' '+f:'')+(r.confidence!=null?' Confidence '+Number(r.confidence).toFixed(0)+'%.':'')});
+ return 'I found '+rows.length+' stored research record'+(rows.length===1?'':'s')+(q?' matching your request':'')+'. Here are the latest relevant findings:\n'+lines.join('\n');
+}
 async function launchRevenueMission(){
  if(!user)return;const title='Revenue Engine — Find 10 Website Prospects';
  const objective='Find 10 real local businesses that appear to need a professional website. Discover and qualify each prospect using verifiable evidence, record the business and website details in the ORION lead pipeline, prioritize the strongest opportunities, and prepare approval-gated outreach. Never invent businesses, contacts, evidence, outreach, clients, payments, or revenue.';
@@ -388,7 +425,11 @@ async function launchRevenueMission(){
 \nasync function handleCommand(v){
   await saveMessage('user',v);addFeed('YOU',v,'you');
   const low=v.toLowerCase().replace(/[?!.,]/g,'').trim();
-  if(low==='find 10 businesses'||low==='find ten businesses'||low.includes('website prospects')||low.includes('find businesses that need websites')||low==='revenue engine'){await launchRevenueMission();return;}\n  if(low==='whats happening'||low==="what's happening"||low.includes('what has been happening')||low.includes('what have you been doing')||low.includes('what happened while i was away')||low.includes('overnight briefing')||low.includes('give me a briefing')){
+  if(low==='find 10 businesses'||low==='find ten businesses'||low.includes('website prospects')||low.includes('find businesses that need websites')||low==='revenue engine'){await launchRevenueMission();return;}\n  if(low.includes('what companies did you research')||low.includes('which companies did you research')||low.includes('show me the research')||low.includes('show research')||low.includes('tell me about the companies you researched')||low.includes('most promising companies')||low.includes('research you did')){
+   const q=low.includes('most promising')?'':(low.match(/(?:research|companies) (?:about|on|for) (.+)$/)?.[1]||'');
+   const reply=await researchBriefing(q); await saveMessage('assistant',reply); addFeed('ORION',reply,'system'); await loadResearch(q); return;
+  }
+  if(low==='whats happening'||low==="what's happening"||low.includes('what has been happening')||low.includes('what have you been doing')||low.includes('what happened while i was away')||low.includes('overnight briefing')||low.includes('give me a briefing')){
     await requestBriefing({speak:true});
     return;
   }
