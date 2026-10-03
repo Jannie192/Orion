@@ -484,6 +484,17 @@ async function launchRevenueMission(){
       const challenge=c.challenge||'No separate challenge was generated.';
       const evidenceCount=Number(data.evidenceCount||0);
       const researchNeeded=!!data.researchNeeded;
+      if(researchNeeded){
+        const researchQuery=String(s.research_reason||('Research needed to answer: '+v)).trim();
+        await sb.from('orion_brain_research_requests').insert({
+          user_id:(await sb.auth.getUser()).data.user?.id,
+          brain_run_id:data.brainRunId,
+          query:researchQuery,
+          reason:String(s.research_reason||'ORION identified an evidence gap.'),
+          priority:'normal',
+          status:'queued'
+        });
+      }
       const confidence=s.confidence==null?'':(' · confidence '+Number(s.confidence).toFixed(0)+'%');
       const reply=(s.title?s.title+': ':'')+rec+(confidence?confidence:'')+(researchNeeded?' · more research required':'');
       await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
