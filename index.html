@@ -507,7 +507,8 @@ async function launchRevenueMission(){
         '<div class="event-msg" style="margin-top:8px"><strong>Challenge</strong><br>'+esc(challenge)+'</div>'+
         (s.research_reason?'<div class="event-msg" style="margin-top:8px"><strong>Research gap</strong><br>'+esc(s.research_reason)+'</div>':'')+
         '<div class="event-msg" style="margin-top:8px;color:#708198">Confidence: '+(s.confidence==null?'—':Number(s.confidence).toFixed(0)+'%')+' · '+(researchNeeded?'Research required':'Evidence checked')+'</div>';
-      $('feed').prepend(card);\n      if(researchRequestId)watchResearchRequest(researchRequestId,v,context,card);
+      $('feed').prepend(card);
+      if(researchRequestId)watchResearchRequest(researchRequestId,v,context,card);
     }
   }
 }
