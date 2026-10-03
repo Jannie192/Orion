@@ -68,6 +68,7 @@ const SUPABASE_URL='https://bhgnzdtjapdnwrybtlwq.supabase.co';
 const SUPABASE_KEY='sb_publishable_GtTWrR0i4fnq12EgfsnGyQ_eyHsdT6a';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});const $=id=>document.getElementById(id);
 let user=null,conversationId=null,booting=false,authBusy=false;
+window.addEventListener('error',e=>{const el=document.getElementById('authmsg');if(el&&e?.error)el.textContent='ORION startup error: '+(e.error.message||e.message||'Unknown error')});
 const esc=v=>String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 function initTabs(){document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('tab-'+b.dataset.tab).classList.add('active')})}
 function renderMissions(){if(user)loadMissions()}
@@ -292,7 +293,7 @@ async function handleCommand(v){
   }
   await loadStats();
 }
-$('signin').onclick=async()=>{
+async function signIn(){
  if(authBusy)return;
  const email=$('email').value.trim(),password=$('password').value;
  $('authmsg').className='error';
@@ -300,15 +301,14 @@ $('signin').onclick=async()=>{
  authBusy=true;$('signin').disabled=true;$('signin').textContent='Signing in…';$('authmsg').textContent='';
  try{
   const {data,error}=await sb.auth.signInWithPassword({email,password});
-  if(error) throw error;
-  if(!data?.session||!data?.user) throw new Error('Supabase authenticated the request but returned no session. Please try again.');
+  if(error)throw error;
+  if(!data?.session||!data?.user)throw new Error('Supabase authenticated the request but returned no session. Please try again.');
   $('authmsg').className='ok';$('authmsg').textContent='Signed in. Loading ORION…';
   await showApp(data.user);
- }catch(error){
-  $('authmsg').textContent=error?.message||'Sign-in failed. Check your email and password.';
- }finally{authBusy=false;$('signin').disabled=false;$('signin').textContent='Sign in'}
+ }catch(error){$('authmsg').textContent=error?.message||'Sign-in failed. Check your email and password.'}
+ finally{authBusy=false;$('signin').disabled=false;$('signin').textContent='Sign in'}
 }
-$('signup').onclick=async()=>{
+async function signUp(){
  if(authBusy)return;
  const email=$('email').value.trim(),password=$('password').value;
  $('authmsg').className='error';
@@ -318,12 +318,12 @@ $('signup').onclick=async()=>{
  try{
   const {data,error}=await sb.auth.signUp({email,password});
   if(error)throw error;
-  $('authmsg').className='ok';
-  $('authmsg').textContent=data.session?'Account created and signed in.':'Account created. Check your email if confirmation is enabled.';
+  $('authmsg').className='ok';$('authmsg').textContent=data.session?'Account created and signed in.':'Account created. Check your email if confirmation is enabled.';
   if(data.session)await showApp(data.user);
  }catch(error){$('authmsg').textContent=error?.message||'Account creation failed.'}
  finally{authBusy=false;$('signup').disabled=false;$('signup').textContent='Create account'}
 }
+$('signin').addEventListener('click',signIn);$('signup').addEventListener('click',signUp);
 $('addGitHub').onclick=()=>{$('githubModal').classList.remove('hidden')};
 $('closeGitHub').onclick=$('cancelGitHub').onclick=()=>{$('githubModal').classList.add('hidden')};
 $('saveGitHub').onclick=async()=>{
