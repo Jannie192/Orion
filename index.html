@@ -408,14 +408,23 @@ async function loadResearch(query=''){
 }
 async function researchBriefing(query=''){
  if(!user)return '';
- let req=sb.from('orion_research_records').select('id,lead_id,title,summary,findings,sources,confidence,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(100);
- const {data,error}=await req;if(error)throw error;
+ const {data,error}=await sb.from('orion_research_records').select('id,lead_id,title,summary,findings,sources,confidence,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(100);
+ if(error)throw error;
  const q=(query||'').toLowerCase().trim();
- const rows=(data||[]).filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
- if(!rows.length)return q?'I could not find research matching "'+query+'".':'I have no stored research records yet.';
+ const filtered=(data||[]).filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
+ if(!filtered.length)return q?'I could not find research matching "'+query+'".':'I have no stored research records yet.';
+ const score=r=>{
+   const f=r.findings&&typeof r.findings==='object'?r.findings:{};
+   const fit=Number(f.fit_score??f.fitScore??0);
+   const need=Number(f.need_score??f.needScore??0);
+   const website=Number(f.website_score??f.websiteScore??0);
+   const conf=Number(r.confidence??0);
+   return fit*0.35+need*0.25+website*0.15+conf*0.25;
+ };
+ const rows=(q||/most promising|best|strongest|top/.test(query.toLowerCase()))?[...filtered].sort((a,b)=>score(b)-score(a)):filtered;
  const top=rows.slice(0,8);
- const lines=top.map((r,i)=>{const f=r.findings&&typeof r.findings==='object'?Object.entries(r.findings).slice(0,3).map(([k,v])=>k+': '+(typeof v==='string'?v:JSON.stringify(v))).join('; '):'';return (i+1)+'. '+r.title+' — '+(r.summary||'No summary.')+(f?' '+f:'')+(r.confidence!=null?' Confidence '+Number(r.confidence).toFixed(0)+'%.':'')});
- return 'I found '+rows.length+' stored research record'+(rows.length===1?'':'s')+(q?' matching your request':'')+'. Here are the latest relevant findings:\n'+lines.join('\n');
+ const lines=top.map((r,i)=>{const f=r.findings&&typeof r.findings==='object'?Object.entries(r.findings).slice(0,4).map(([k,v])=>k+': '+(typeof v==='string'?v:JSON.stringify(v))).join('; '):'';return (i+1)+'. '+r.title+' — '+(r.summary||'No summary recorded.')+(f?' '+f:'')+(r.confidence!=null?' Confidence '+Number(r.confidence).toFixed(0)+'%.':'')});
+ return 'I found '+filtered.length+' stored research record'+(filtered.length===1?'':'s')+(q?' matching your request':'')+'. '+(q||/most promising|best|strongest|top/.test(query.toLowerCase())?'Here are the strongest stored findings based on the recorded evidence and confidence.':'Here are the latest stored findings:')+'\n'+lines.join('\n');
 }
 async function launchRevenueMission(){
  if(!user)return;const title='Revenue Engine — Find 10 Website Prospects';
