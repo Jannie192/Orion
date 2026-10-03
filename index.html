@@ -413,27 +413,17 @@ async function signIn(){
  const email=$('email').value.trim(),password=$('password').value;
  $('authmsg').className='error';
  if(!email||!password){$('authmsg').textContent='Enter your email and password.';return}
- authBusy=true;$('signin').disabled=true;$('signin').textContent='Signing in…';$('authmsg').textContent='';
+ authBusy=true;$('signin').disabled=true;$('signin').textContent='Signing in…';$('authmsg').textContent='Contacting ORION authentication…';
  try{
-  // Use an isolated auth client for the credential exchange. The main ORION
-  // client is also restoring its persisted session at startup; separating the
-  // login transaction prevents browser auth-lock contention from leaving the
-  // Sign in button stuck indefinitely.
-  const loginClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
-   auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,flowType:'implicit',storageKey:'orion-login-attempt'}
-  });
-  const {data,error}=await loginClient.auth.signInWithPassword({email,password});
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
   if(error)throw error;
-  if(!data?.session||!data?.user)throw new Error('Supabase authenticated the request but returned no session. Please try again.');
-  // Transfer the verified session to the persistent ORION client, then reload
-  // once. The normal startup path will load the dashboard from the saved session.
-  const {error:setError}=await sb.auth.setSession(data.session);
-  if(setError)throw setError;
+  if(!data?.session||!data?.user)throw new Error('Authentication succeeded but no session was returned.');
   $('authmsg').className='ok';$('authmsg').textContent='Signed in. Loading ORION…';
-  window.location.reload();
+  setTimeout(()=>void showApp(data.user),0);
  }catch(error){
   console.error('ORION sign-in failed',error);
   $('authmsg').textContent=error?.message||'Sign-in failed. Check your email and password.';
+ }finally{
   authBusy=false;$('signin').disabled=false;$('signin').textContent='Sign in';
  }
 }
@@ -487,24 +477,18 @@ $('closeGeneric').onclick=$('cancelGeneric').onclick=()=>{$('genericToolModal').
 $('run').onclick=async()=>{const v=$('command').value.trim();if(!v)return;$('run').disabled=true;try{await handleCommand(v);$('command').value=''}catch(e){addFeed('ORION','Command failed: '+e.message,'system')}finally{$('run').disabled=false}}
 $('command').addEventListener('keydown',e=>{if(e.key==='Enter')$('run').click()});
 document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>{$('command').value=b.dataset.cmd;$('command').focus()});
-async function initializeAuth(){
- try{
-  const {data,error}=await sb.auth.getSession();
-  if(error)throw error;
-  if(data?.session?.user){await showApp(data.session.user)}else if(!authBusy){showLogin()}
- }catch(e){
-  console.error('ORION auth initialization failed',e);
-  showLogin();
-  $('authmsg').textContent='Authentication initialization failed: '+(e?.message||'Unknown error');
- }
+function initializeAuth(){
+ $('authmsg').textContent='Checking ORION session…';
 }
 sb.auth.onAuthStateChange((event,session)=>{
  if(event==='PASSWORD_RECOVERY'){showPasswordRecovery();return}
- // IMPORTANT: Supabase warns against making async Supabase calls from inside
- // the auth-state callback because it can deadlock the client. Defer app loading
- // until this callback has returned; signIn() handles the immediate login path.
- if(session?.user){setTimeout(()=>{if(!authBusy)void showApp(session.user)},0);return}
- if(event==='SIGNED_OUT' && !authBusy)showLogin();
+ if(event==='INITIAL_SESSION'){
+  if(session?.user)setTimeout(()=>void showApp(session.user),0);
+  else if(!authBusy)showLogin();
+  return;
+ }
+ if(event==='SIGNED_IN'&&session?.user){setTimeout(()=>void showApp(session.user),0);return}
+ if(event==='SIGNED_OUT'&&!authBusy)showLogin();
 });
 window.__ORION_MAIN_READY=true;
 void initializeAuth();
