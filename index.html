@@ -37,6 +37,8 @@
 .hero p{margin-bottom:0}
 .layout{gap:12px}
 .section{margin-top:13px}
+
+.voice-controls{display:flex;gap:7px;align-items:center;margin-top:8px}.voice-btn{width:42px;height:42px;border:1px solid #1b2b3e;border-radius:11px;background:#0b121c;color:#dcecff;cursor:pointer;font-size:17px}.voice-btn:hover{border-color:#2d4967;background:#0e1722}.voice-btn.listening{border-color:#6f9cff;box-shadow:0 0 0 3px rgba(111,156,255,.12)}.voice-status{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#65758b}.briefing-card{margin-top:10px;border:1px solid #1b2b3e;border-radius:12px;background:#0a111a;padding:11px}.briefing-card .briefing-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.briefing-card button{border:1px solid #1b2b3e;background:#0e1722;color:#dcecff;border-radius:8px;padding:6px 9px;cursor:pointer;font-size:10px}
 </style>
 </head>
 <body>
@@ -54,8 +56,9 @@
 <div class="top"><div class="brand"><div class="orb"></div>ORION</div><div><span class="status"><i class="dot"></i> ONLINE</span><button class="logout" id="logout">Sign out</button></div></div>
 <section class="hero"><div class="eyebrow">PERSONAL AI OS</div>
 <h1 id="greeting">Good to see you.</h1><p>One command center for memory, goals, projects, tasks and agents. Your command history stays in your private workspace.</p>
-<div class="command command-shell"><input id="command" placeholder="Tell ORION what you want done..."><button class="btn" id="run">Execute</button></div>
-<div class="command-hint"><span>Ask</span><span>Plan a mission</span><span>Delegate work</span><span>Remember</span><span>Check progress</span></div></section>
+<div class="command command-shell"><input id="command" placeholder="Talk to ORION..."><button class="btn" id="run">Execute</button></div>
+<div class="voice-controls"><button class="voice-btn" id="voiceListen" title="Talk to ORION" aria-label="Talk to ORION">🎙</button><button class="voice-btn" id="voiceSpeak" title="Speak latest ORION response" aria-label="Speak latest ORION response">🔊</button><span class="voice-status" id="voiceStatus">VOICE READY</span></div>
+<div class="command-hint"><span>Ask</span><span>What's happening?</span><span>Plan a mission</span><span>Remember</span><span>Check progress</span></div></section>
 
 <div class="system-strip">
 <div class="system-chip brain-chip"><span>Brain</span><b id="brainStatus">ONLINE</b></div>
@@ -108,9 +111,10 @@ function initTabs(){document.querySelectorAll('[data-tab]').forEach(b=>b.onclick
 function renderMissions(){if(user)loadMissions()}
 async function showApp(u){
  user=u;
+ const previousSeen=localStorage.getItem('orion_last_seen_at');
  $('login').classList.add('hidden');$('app').classList.remove('hidden');
  $('greeting').textContent='Good to see you.';
- if(!booting){booting=true;try{await boot()}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
+ if(!booting){booting=true;try{await boot();await requestBriefing({speak:false,since:previousSeen||new Date(Date.now()-24*60*60*1000).toISOString()})}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
 }
 function showLogin(){if(authBusy)return;$('app').classList.add('hidden');$('login').classList.remove('hidden');user=null;conversationId=null}
 function addFeed(role,content,kind=''){const el=document.createElement('div');el.className='msg '+kind;el.innerHTML='<div class="meta">'+esc(role)+'</div>'+esc(content).replace(/\n/g,'<br>');$('feed').prepend(el)}
@@ -278,16 +282,73 @@ async function getReasoningContext(){
     missions:missions.data||[], agentEvents:events.data||[], missionRuns:runs.data||[], capabilityRequests:capabilities.data||[]
   };
 }
+async function requestBriefing({speak=true,since}={}){
+  const last=since||localStorage.getItem('orion_last_seen_at')||new Date(Date.now()-24*60*60*1000).toISOString();
+  const {data,error}=await sb.functions.invoke('orion-briefing',{body:{since:last}});
+  localStorage.setItem('orion_last_seen_at',new Date().toISOString());
+  if(error||!data?.ok)throw new Error(data?.error||error?.message||'Briefing unavailable.');
+  const reply=data.spoken||'ORION has no briefing to report yet.';
+  await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
+  const card=document.createElement('div');card.className='briefing-card';
+  const head=document.createElement('div');head.className='briefing-head';
+  const title=document.createElement('strong');title.textContent='ORION BRIEFING';
+  const speakButton=document.createElement('button');speakButton.type='button';speakButton.textContent='Speak';speakButton.onclick=()=>speakText(window.__orionLatestBriefing||reply);
+  head.append(title,speakButton);
+  const body=document.createElement('div');body.className='event-msg';body.style.marginTop='7px';body.textContent=reply;
+  card.append(head,body);$('feed').prepend(card);
+  window.__orionLatestBriefing=reply;
+  if(speak)speakText(reply);
+  return data;
+}
+window.requestBriefing=requestBriefing;
+
+function speakText(text){
+  if(!text)return;
+  if(!('speechSynthesis' in window)){if($('voiceStatus'))$('voiceStatus').textContent='TTS NOT AVAILABLE';return}
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(String(text).replace(/[*_#]/g,''));
+  const voices=window.speechSynthesis.getVoices();
+  const preferred=voices.find(v=>/^en-ZA/i.test(v.lang))||voices.find(v=>/^en-GB/i.test(v.lang))||voices.find(v=>/^en-US/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));
+  if(preferred)u.voice=preferred;
+  u.lang=preferred?.lang||'en-ZA';u.rate=.94;u.pitch=.82;u.volume=1;
+  u.onstart=()=>{if($('voiceStatus'))$('voiceStatus').textContent='ORION SPEAKING'};
+  u.onend=()=>{if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY'};
+  window.speechSynthesis.speak(u);
+}
+window.speakText=speakText;
+
+let orionRecognition=null;
+function setupVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){if($('voiceStatus'))$('voiceStatus').textContent='VOICE INPUT UNAVAILABLE';return}
+  orionRecognition=new SR();
+  orionRecognition.lang='en-ZA';orionRecognition.continuous=false;orionRecognition.interimResults=false;orionRecognition.maxAlternatives=1;
+  orionRecognition.onstart=()=>{if($('voiceStatus'))$('voiceStatus').textContent='LISTENING…';$('voiceListen')?.classList.add('listening')};
+  orionRecognition.onend=()=>{$('voiceListen')?.classList.remove('listening');if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY'};
+  orionRecognition.onerror=e=>{$('voiceListen')?.classList.remove('listening');if($('voiceStatus'))$('voiceStatus').textContent='VOICE ERROR: '+(e.error||'UNKNOWN')};
+  orionRecognition.onresult=async e=>{
+    const spoken=e.results?.[0]?.[0]?.transcript?.trim();
+    if(!spoken)return;
+    $('command').value=spoken;
+    try{await handleCommand(spoken);$('command').value=''}catch(err){addFeed('ORION','Voice command failed: '+err.message,'system')}
+  };
+}
+setupVoice();
+
 async function handleCommand(v){
   await saveMessage('user',v);addFeed('YOU',v,'you');
-  const low=v.toLowerCase();
+  const low=v.toLowerCase().replace(/[?!.,]/g,'').trim();
+  if(low==='whats happening'||low==="what's happening"||low.includes('what has been happening')||low.includes('what have you been doing')||low.includes('what happened while i was away')||low.includes('overnight briefing')||low.includes('give me a briefing')){
+    await requestBriefing({speak:true});
+    return;
+  }
   if(low.startsWith('mission ')){
     const title=v.slice(8).trim();
     const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title}});
     if(error)throw error;
     const mission=m?.mission;
     const reply='Mission planned: '+(mission?.title||title)+'. ORION created '+(m?.steps?.length||0)+' execution steps and is tracking them now.';await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadMissions();await loadAgentEvents();
-    if(mission?.id){const runNow=confirm('Mission planned. Start the autonomous execution loop now?');if(runNow)await runMission(mission.id);}
+    if(mission?.id){await runMission(mission.id);}
   }else if(low.startsWith('project ')){
     const title=v.slice(8).trim();const {error}=await sb.from('projects').insert({user_id:user.id,name:title,status:'active',description:'Created from ORION command.'});if(error)throw error;const reply='Project created: '+title;await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadProjects();
   }else
@@ -436,6 +497,8 @@ $('addTool').onclick=()=>{$('toolModal').classList.remove('hidden')};$('closeToo
 $('closeGeneric').onclick=$('cancelGeneric').onclick=()=>{$('genericToolModal').classList.add('hidden')};$('saveGeneric').onclick=async()=>{const toolId=$('genericToolId').value,name=$('genericName').value.trim()||'Default',authType=$('genericAuth').value,baseUrl=$('genericBaseUrl').value.trim(),secret=$('genericSecret').value,authHeader=$('genericAuthHeader').value.trim()||'X-API-Key';if(!baseUrl){$('genericMsg').textContent='Base URL is required.';return}const {data,error}=await sb.functions.invoke('orion-connect',{body:{operation:'save_adapter',toolId,name,baseUrl,authType,secret,authHeader}});if(error||!data?.ok){$('genericMsg').textContent=data?.error||error?.message||'Connection failed.';return}$('genericSecret').value='';$('genericToolModal').classList.add('hidden');await loadConnections();addFeed('ORION','Adapter connection established.','system')};$('logout').onclick=async()=>{await sb.auth.signOut();showLogin()}
 $('run').onclick=async()=>{const v=$('command').value.trim();if(!v)return;$('run').disabled=true;try{await handleCommand(v);$('command').value=''}catch(e){addFeed('ORION','Command failed: '+e.message,'system')}finally{$('run').disabled=false}}
 $('command').addEventListener('keydown',e=>{if(e.key==='Enter')$('run').click()});
+$('voiceListen').onclick=()=>{if(!orionRecognition){setupVoice();if(!orionRecognition)return}try{orionRecognition.start()}catch{}};
+$('voiceSpeak').onclick=()=>speakText(window.__orionLatestBriefing||'ORION voice is online. Ask me what is happening.');
 document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>{$('command').value=b.dataset.cmd;$('command').focus()});
 function initializeAuth(){ $('authmsg').textContent='Checking ORION session…'; }
 window.__ORION_MAIN_READY=true;
