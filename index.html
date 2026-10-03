@@ -103,12 +103,12 @@ async function openMission(id){
  ]);
  if(!m)return;
  document.querySelector('[data-tab="missionsTab"]').click();
- $('missionWorkspace').innerHTML='<div class="workspace-card"><div class="workspace-head"><div><div class="workspace-title">'+esc(m.title)+'</div><div class="workspace-meta">'+esc(m.description||'No description')+'</div></div><div style="display:flex;gap:7px;align-items:center"><span class="pill">'+esc(m.status)+'</span><button class="btn" style="height:34px;padding:0 12px;font-size:10px" onclick="runMission(\''+m.id+'\')">'+(m.status==='completed'?'Completed':'Run Mission')+'</button></div></div><div class="mission-bar"><i style="width:'+m.progress+'%"></i></div><div class="workspace-grid"><div class="workspace-card"><h3>Mission plan</h3>'+((steps||[]).map(s=>'<div class="row"><span>'+esc(s.step_order+'. '+s.title)+'</span><b class="pill">'+esc(s.status)+'</b></div>').join('')||'<div class="empty-state">ORION has not generated steps yet.</div>')+'</div><div class="workspace-card"><h3>Recent reports</h3>'+((events||[]).map(e=>'<div class="agent-event"><div class="event-top"><strong>'+esc(e.title)+'</strong><span class="event-time">'+new Date(e.created_at).toLocaleString()+'</span></div><div class="event-msg">'+esc(e.message||'')+'</div></div>').join('')||'<div class="empty-state">No agent reports yet.</div>')+'</div></div></div>';
+ $('missionWorkspace').innerHTML='<div class="workspace-card"><div class="workspace-head"><div><div class="workspace-title">'+esc(m.title)+'</div><div class="workspace-meta">'+esc(m.description||'No description')+'</div></div><div style="display:flex;gap:7px;align-items:center"><span class="pill">'+esc(m.status)+'</span><button class="btn" style="height:34px;padding:0 12px;font-size:10px" onclick="runMission(\''+m.id+'\',this)">'+(m.status==='completed'?'Completed':'Run Mission')+'</button></div></div><div class="mission-bar"><i style="width:'+m.progress+'%"></i></div><div class="workspace-grid"><div class="workspace-card"><h3>Mission plan</h3>'+((steps||[]).map(s=>'<div class="row"><span>'+esc(s.step_order+'. '+s.title)+'</span><b class="pill">'+esc(s.status)+'</b></div>').join('')||'<div class="empty-state">ORION has not generated steps yet.</div>')+'</div><div class="workspace-card"><h3>Recent reports</h3>'+((events||[]).map(e=>'<div class="agent-event"><div class="event-top"><strong>'+esc(e.title)+'</strong><span class="event-time">'+new Date(e.created_at).toLocaleString()+'</span></div><div class="event-msg">'+esc(e.message||'')+'</div></div>').join('')||'<div class="empty-state">No agent reports yet.</div>')+'</div></div></div>';
 }
 window.openMission=openMission;
 
-async function runMission(id){
- const button=event?.currentTarget;
+async function runMission(id,button){
+
  if(button){button.disabled=true;button.textContent='Running…';}
  try{
   const {data,error}=await sb.functions.invoke('orion-mission-runner',{body:{missionId:id,maxSteps:3}});
@@ -199,13 +199,22 @@ async function executeAction(id,el){
   el.querySelector('[data-action="approve"]').disabled=true;
   el.querySelector('[data-action="reject"]').disabled=true;
   el.innerHTML='<div class="action-state">Executing…</div>';
+  const {data:request}=await sb.from('action_requests').select('id,payload').eq('id',id).eq('user_id',user.id).single();
   const {data,error}=await sb.functions.invoke('orion-execute',{body:{actionRequestId:id}});
   if(error || !data?.ok){
     el.innerHTML='<div class="action-state">Execution failed</div><p>'+esc(data?.error||error?.message||'Unknown execution error.')+'</p>';
     return;
   }
+  const payload=request?.payload||{};
+  const missionId=payload.mission_id||payload.missionId;
+  const stepId=payload.mission_step_id||payload.missionStepId;
+  if(missionId&&stepId){
+    await sb.from('orion_mission_steps').update({status:'ready',last_error:null,updated_at:new Date().toISOString()}).eq('id',stepId).eq('user_id',user.id);
+    await sb.from('orion_missions').update({status:'active',updated_at:new Date().toISOString()}).eq('id',missionId).eq('user_id',user.id);
+    await runMission(missionId);
+  }
   el.innerHTML='<div class="action-state">Executed</div><p>ORION completed the approved action.</p>';
-  await loadStats();
+  await loadStats();await loadMissions();await loadAgentEvents();
 }
 async function resolveAction(id,status,el){
   const {error}=await sb.from('action_requests').update({status,updated_at:new Date().toISOString()}).eq('id',id).eq('user_id',user.id);
