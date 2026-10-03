@@ -415,13 +415,27 @@ async function signIn(){
  if(!email||!password){$('authmsg').textContent='Enter your email and password.';return}
  authBusy=true;$('signin').disabled=true;$('signin').textContent='Signing in…';$('authmsg').textContent='';
  try{
-  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  // Use an isolated auth client for the credential exchange. The main ORION
+  // client is also restoring its persisted session at startup; separating the
+  // login transaction prevents browser auth-lock contention from leaving the
+  // Sign in button stuck indefinitely.
+  const loginClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+   auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,flowType:'implicit',storageKey:'orion-login-attempt'}
+  });
+  const {data,error}=await loginClient.auth.signInWithPassword({email,password});
   if(error)throw error;
   if(!data?.session||!data?.user)throw new Error('Supabase authenticated the request but returned no session. Please try again.');
+  // Transfer the verified session to the persistent ORION client, then reload
+  // once. The normal startup path will load the dashboard from the saved session.
+  const {error:setError}=await sb.auth.setSession(data.session);
+  if(setError)throw setError;
   $('authmsg').className='ok';$('authmsg').textContent='Signed in. Loading ORION…';
-  await showApp(data.user);
- }catch(error){$('authmsg').textContent=error?.message||'Sign-in failed. Check your email and password.'}
- finally{authBusy=false;$('signin').disabled=false;$('signin').textContent='Sign in'}
+  window.location.reload();
+ }catch(error){
+  console.error('ORION sign-in failed',error);
+  $('authmsg').textContent=error?.message||'Sign-in failed. Check your email and password.';
+  authBusy=false;$('signin').disabled=false;$('signin').textContent='Sign in';
+ }
 }
 async function signUp(){
  if(authBusy)return;
@@ -495,4 +509,3 @@ sb.auth.onAuthStateChange((event,session)=>{
 window.__ORION_MAIN_READY=true;
 void initializeAuth();
 </script></body></html>
-
