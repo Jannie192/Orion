@@ -81,7 +81,7 @@
     if(button){button.disabled=true;button.textContent=kind==='signin'?'Signing in…':'Creating…';}
     try{
       if(!window.supabase?.createClient) throw new Error('The Supabase library did not load. Check your connection and reload ORION.');
-      client=client||window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storage:window.localStorage,storageKey:'orion-auth'}});
+      client=client||window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storage:window.localStorage,storageKey:'orion-auth-v2'}});
       const result=kind==='signin'
         ? await client.auth.signInWithPassword({email,password})
         : await client.auth.signUp({email,password});
@@ -125,7 +125,7 @@
       if(!email){msg('Enter your email address.');return;}
       try{
         if(!window.supabase?.createClient)throw new Error('The Supabase library did not load. Reload ORION and try again.');
-        client=client||window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storage:window.localStorage,storageKey:'orion-auth'}});
+        client=client||window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storage:window.localStorage,storageKey:'orion-auth-v2'}});
         sendReset.disabled=true;sendReset.textContent='Sending…';
         const result=await client.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
         if(result.error)throw result.error;
@@ -141,7 +141,7 @@
 <script>
 const SUPABASE_URL='https://bhgnzdtjapdnwrybtlwq.supabase.co';
 const SUPABASE_KEY='sb_publishable_GtTWrR0i4fnq12EgfsnGyQ_eyHsdT6a';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storage:window.localStorage,storageKey:'orion-auth'}});const $=id=>document.getElementById(id);
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storage:window.localStorage,storageKey:'orion-auth-v2'}});const $=id=>document.getElementById(id);
 let user=null,conversationId=null,booting=false,authBusy=false;
 window.addEventListener('error',e=>{const el=document.getElementById('authmsg');if(el&&e?.error)el.textContent='ORION startup error: '+(e.error.message||e.message||'Unknown error')});
 const esc=v=>String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
