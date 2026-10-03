@@ -431,7 +431,7 @@ async function launchRevenueMission(){
  const objective='Find 10 real local businesses that appear to need a professional website. Discover and qualify each prospect using verifiable evidence, record the business and website details in the ORION lead pipeline, prioritize the strongest opportunities, and prepare approval-gated outreach. Never invent businesses, contacts, evidence, outreach, clients, payments, or revenue.';
  try{const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title+'\n\n'+objective}});if(error||!m?.ok)throw new Error(m?.error||error?.message||'Mission planning failed.');addFeed('ORION','Revenue mission planned. '+(m.steps?.length||0)+' execution steps created.','system');if(m.mission?.id)await runMission(m.mission.id);await loadRevenueEngine();await loadMissions();}catch(e){addFeed('ORION','Revenue mission failed to start: '+e.message,'system');}
 }
-\nasync function handleCommand(v){
+\nasync function handleCommand(v,options={}){
   await saveMessage('user',v);addFeed('YOU',v,'you');
   const low=v.toLowerCase().replace(/[?!.,]/g,'').trim();
   if(low==='find 10 businesses'||low==='find ten businesses'||low.includes('website prospects')||low.includes('find businesses that need websites')||low==='revenue engine'){await launchRevenueMission();return;}\n  if(low.includes('what companies did you research')||low.includes('which companies did you research')||low.includes('show me the research')||low.includes('show research')||low.includes('tell me about the companies you researched')||low.includes('most promising companies')||low.includes('research you did')){
@@ -484,16 +484,18 @@ async function launchRevenueMission(){
       const challenge=c.challenge||'No separate challenge was generated.';
       const evidenceCount=Number(data.evidenceCount||0);
       const researchNeeded=!!data.researchNeeded;
-      if(researchNeeded){
+      let researchRequestId=null;
+      if(researchNeeded&&!options.researchPass){
         const researchQuery=String(s.research_reason||('Research needed to answer: '+v)).trim();
-        await sb.from('orion_brain_research_requests').insert({
+        const {data:rq,error:rqError}=await sb.from('orion_brain_research_requests').insert({
           user_id:(await sb.auth.getUser()).data.user?.id,
           brain_run_id:data.brainRunId,
           query:researchQuery,
           reason:String(s.research_reason||'ORION identified an evidence gap.'),
           priority:'normal',
           status:'queued'
-        });
+        }).select('id').single();
+        if(!rqError)researchRequestId=rq?.id||null;
       }
       const confidence=s.confidence==null?'':(' · confidence '+Number(s.confidence).toFixed(0)+'%');
       const reply=(s.title?s.title+': ':'')+rec+(confidence?confidence:'')+(researchNeeded?' · more research required':'');
@@ -505,9 +507,32 @@ async function launchRevenueMission(){
         '<div class="event-msg" style="margin-top:8px"><strong>Challenge</strong><br>'+esc(challenge)+'</div>'+
         (s.research_reason?'<div class="event-msg" style="margin-top:8px"><strong>Research gap</strong><br>'+esc(s.research_reason)+'</div>':'')+
         '<div class="event-msg" style="margin-top:8px;color:#708198">Confidence: '+(s.confidence==null?'—':Number(s.confidence).toFixed(0)+'%')+' · '+(researchNeeded?'Research required':'Evidence checked')+'</div>';
-      $('feed').prepend(card);
+      $('feed').prepend(card);\n      if(researchRequestId)watchResearchRequest(researchRequestId,v,context,card);
     }
   }
+}
+async function watchResearchRequest(requestId,command,context,card){
+  if(!requestId)return;
+  let attempts=0;
+  const poll=async()=>{
+    attempts++;
+    const {data:rq,error}=await sb.from('orion_brain_research_requests').select('id,status,result_research_id').eq('id',requestId).eq('user_id',user.id).maybeSingle();
+    if(error||!rq)return;
+    if(rq.status==='completed'){
+      const note=document.createElement('div');note.className='event-msg';note.style.marginTop='8px';note.innerHTML='<strong>Research complete</strong><br>ORION found new evidence and is re-evaluating the recommendation.';card.appendChild(note);
+      const {data:brain,error:brainError}=await sb.functions.invoke('orion-brain',{body:{command,context}});
+      if(!brainError&&brain?.ok){
+        const s2=brain.synthesis||{},c2=brain.challenge||{};
+        const note2=document.createElement('div');note2.className='event-msg';note2.style.marginTop='8px';note2.innerHTML='<strong>Re-evaluated recommendation</strong><br>'+esc(s2.recommendation||'No recommendation generated.')+'<br><span style="color:#708198">Challenge: '+esc(c2.challenge||'No separate challenge generated.')+'</span>';card.appendChild(note2);
+        await saveMessage('assistant','Research completed. ORION re-evaluated the recommendation using the new evidence.');
+        window.__orionLatestBriefing='Research completed. ORION re-evaluated the recommendation using new evidence.';
+      }
+      return;
+    }
+    if(rq.status==='failed'||attempts>=36)return;
+    setTimeout(poll,5000);
+  };
+  setTimeout(poll,5000);
 }
 async function requestPasswordReset(){
  const email=($('resetEmail').value.trim()||$('email').value.trim());
