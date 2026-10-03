@@ -103,9 +103,22 @@ async function openMission(id){
  ]);
  if(!m)return;
  document.querySelector('[data-tab="missionsTab"]').click();
- $('missionWorkspace').innerHTML='<div class="workspace-card"><div class="workspace-head"><div><div class="workspace-title">'+esc(m.title)+'</div><div class="workspace-meta">'+esc(m.description||'No description')+'</div></div><span class="pill">'+esc(m.status)+'</span></div><div class="mission-bar"><i style="width:'+m.progress+'%"></i></div><div class="workspace-grid"><div class="workspace-card"><h3>Mission plan</h3>'+((steps||[]).map(s=>'<div class="row"><span>'+esc(s.step_order+'. '+s.title)+'</span><b class="pill">'+esc(s.status)+'</b></div>').join('')||'<div class="empty-state">ORION has not generated steps yet.</div>')+'</div><div class="workspace-card"><h3>Recent reports</h3>'+((events||[]).map(e=>'<div class="agent-event"><div class="event-top"><strong>'+esc(e.title)+'</strong><span class="event-time">'+new Date(e.created_at).toLocaleString()+'</span></div><div class="event-msg">'+esc(e.message||'')+'</div></div>').join('')||'<div class="empty-state">No agent reports yet.</div>')+'</div></div></div>';
+ $('missionWorkspace').innerHTML='<div class="workspace-card"><div class="workspace-head"><div><div class="workspace-title">'+esc(m.title)+'</div><div class="workspace-meta">'+esc(m.description||'No description')+'</div></div><div style="display:flex;gap:7px;align-items:center"><span class="pill">'+esc(m.status)+'</span><button class="btn" style="height:34px;padding:0 12px;font-size:10px" onclick="runMission(\''+m.id+'\')">'+(m.status==='completed'?'Completed':'Run Mission')+'</button></div></div><div class="mission-bar"><i style="width:'+m.progress+'%"></i></div><div class="workspace-grid"><div class="workspace-card"><h3>Mission plan</h3>'+((steps||[]).map(s=>'<div class="row"><span>'+esc(s.step_order+'. '+s.title)+'</span><b class="pill">'+esc(s.status)+'</b></div>').join('')||'<div class="empty-state">ORION has not generated steps yet.</div>')+'</div><div class="workspace-card"><h3>Recent reports</h3>'+((events||[]).map(e=>'<div class="agent-event"><div class="event-top"><strong>'+esc(e.title)+'</strong><span class="event-time">'+new Date(e.created_at).toLocaleString()+'</span></div><div class="event-msg">'+esc(e.message||'')+'</div></div>').join('')||'<div class="empty-state">No agent reports yet.</div>')+'</div></div></div>';
 }
 window.openMission=openMission;
+
+async function runMission(id){
+ const button=event?.currentTarget;
+ if(button){button.disabled=true;button.textContent='Running…';}
+ try{
+  const {data,error}=await sb.functions.invoke('orion-mission-runner',{body:{missionId:id,maxSteps:3}});
+  if(error||!data?.ok) throw new Error(data?.error||error?.message||'Mission runner failed.');
+  const status=data.status||'active';
+  addFeed('ORION','Mission runner processed '+(data.processed?.length||0)+' step(s) · '+data.progress+'% complete · '+status+'.','system');
+  await loadMissions();await loadAgentEvents();await openMission(id);
+ }catch(e){addFeed('ORION','Mission run failed: '+e.message,'system');if(button){button.disabled=false;button.textContent='Run Mission';}}
+}
+window.runMission=runMission;
 
 async function loadProjects(){
  const {data,error}=await sb.from('projects').select('id,name,description,status,updated_at').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(30);
@@ -219,6 +232,7 @@ async function handleCommand(v){
     if(error)throw error;
     const mission=m?.mission;
     const reply='Mission planned: '+(mission?.title||title)+'. ORION created '+(m?.steps?.length||0)+' execution steps and is tracking them now.';await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadMissions();await loadAgentEvents();
+    if(mission?.id){const runNow=confirm('Mission planned. Start the autonomous execution loop now?');if(runNow)await runMission(mission.id);}
   }else if(low.startsWith('project ')){
     const title=v.slice(8).trim();const {error}=await sb.from('projects').insert({user_id:user.id,name:title,status:'active',description:'Created from ORION command.'});if(error)throw error;const reply='Project created: '+title;await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadProjects();
   }else
