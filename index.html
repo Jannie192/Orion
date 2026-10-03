@@ -98,6 +98,9 @@
   function attach(){
     const signIn=document.getElementById('signin');
     const signUp=document.getElementById('signup');
+    const forgot=document.getElementById('forgotPassword');
+    const sendReset=document.getElementById('sendReset');
+    const resetPanel=document.getElementById('resetPanel');
     if(!signIn||!signUp)return;
     signIn.addEventListener('click',function(e){
       if(window.__ORION_MAIN_READY)return;
