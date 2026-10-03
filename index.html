@@ -470,42 +470,33 @@ async function launchRevenueMission(){
     const reply='Task created: '+title;await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
   }else{
     const context=await getReasoningContext();
-    const {data,error}=await sb.functions.invoke('orion-reason',{body:{
+    const {data,error}=await sb.functions.invoke('orion-brain',{body:{
       command:v,
-      context,
-      orchestration:{
-        role:'ORION is the central commander. Understand the objective, inspect current state, decide whether to answer, create/update a mission, delegate to an agent, request a capability, or execute an approved tool.',
-        rules:[
-          'Prefer existing mission/project/task state over assumptions.',
-          'Never invent tool results, agent work, money, or external facts.',
-          'Use the smallest capable execution path first; escalate to agents only when useful.',
-          'For complex or multi-step objectives, propose a mission with explicit dependencies.',
-          'Keep high-risk or external actions behind approval.',
-          'Return concise user-facing responses plus structured routing decisions.'
-        ]
-      }
+      context
     }});
-    if(error)throw error;
-    if(!data?.ok){
-      addFeed('ORION',data?.message||'The reasoning layer is not configured yet.','system');
-      await saveMessage('assistant',data?.message||'The reasoning layer is not configured yet.');
+    if(error||!data?.ok){
+      const message=data?.error||error?.message||'The ORION brain could not complete this request.';
+      await saveMessage('assistant',message);addFeed('ORION',message,'system');
     }else{
-      const reasoning=data.reasoning||{};
-      const reply=reasoning.response||'I understood the command, but I have no response yet.';
-      await saveMessage('assistant',reply);addFeed('ORION',reply,'system');renderRouting(reasoning);
-      const actions=Array.isArray(reasoning.proposedActions)?reasoning.proposedActions:[];
-      for(const action of actions){
-        const {data:row,error:actionError}=await sb.from('action_requests').insert({
-          user_id:user.id,conversation_id:conversationId,type:action.type||'proposed_action',
-          description:action.description||'Proposed ORION action',payload:action,
-          requires_approval:action.requiresApproval!==false,status:'pending'
-        }).select('id,type,description,requires_approval').single();
-        if(actionError) throw actionError;
-        renderAction(row);
-      }
+      const s=data.synthesis||{};
+      const c=data.challenge||{};
+      const rec=s.recommendation||'No recommendation generated.';
+      const challenge=c.challenge||'No separate challenge was generated.';
+      const evidenceCount=Number(data.evidenceCount||0);
+      const researchNeeded=!!data.researchNeeded;
+      const confidence=s.confidence==null?'':(' · confidence '+Number(s.confidence).toFixed(0)+'%');
+      const reply=(s.title?s.title+': ':'')+rec+(confidence?confidence:'')+(researchNeeded?' · more research required':'');
+      await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
+      const card=document.createElement('div');card.className='briefing-card';
+      card.innerHTML='<div class="briefing-head"><strong>ORION BRAIN</strong><span class="pill">'+evidenceCount+' evidence records</span></div>'+
+        '<div class="event-msg" style="margin-top:7px"><strong>Recommendation</strong><br>'+esc(rec)+'</div>'+
+        '<div class="event-msg" style="margin-top:8px"><strong>Why</strong><br>'+esc(s.rationale||'Evidence and current context were considered.')+'</div>'+
+        '<div class="event-msg" style="margin-top:8px"><strong>Challenge</strong><br>'+esc(challenge)+'</div>'+
+        (s.research_reason?'<div class="event-msg" style="margin-top:8px"><strong>Research gap</strong><br>'+esc(s.research_reason)+'</div>':'')+
+        '<div class="event-msg" style="margin-top:8px;color:#708198">Confidence: '+(s.confidence==null?'—':Number(s.confidence).toFixed(0)+'%')+' · '+(researchNeeded?'Research required':'Evidence checked')+'</div>';
+      $('feed').prepend(card);
     }
   }
-  await loadStats();
 }
 async function requestPasswordReset(){
  const email=($('resetEmail').value.trim()||$('email').value.trim());
