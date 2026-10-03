@@ -215,10 +215,10 @@ async function handleCommand(v){
   const low=v.toLowerCase();
   if(low.startsWith('mission ')){
     const title=v.slice(8).trim();
-    const {data:m,error}=await sb.from('orion_missions').insert({user_id:user.id,title,description:'Mission created from ORION command.',status:'active',priority:'medium',progress:0,started_at:new Date().toISOString(),objective:{source:'command'}}).select('id,title').single();
+    const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title}});
     if(error)throw error;
-    await sb.from('agent_events').insert({user_id:user.id,mission_id:m.id,event_type:'mission_created',title:'Mission created',message:'ORION created the mission and will coordinate the next steps.',status:'info',payload:{source:'command'}});
-    const reply='Mission created: '+title+'. ORION now has a persistent objective to plan and track.';await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadMissions();await loadAgentEvents();
+    const mission=m?.mission;
+    const reply='Mission planned: '+(mission?.title||title)+'. ORION created '+(m?.steps?.length||0)+' execution steps and is tracking them now.';await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadMissions();await loadAgentEvents();
   }else if(low.startsWith('project ')){
     const title=v.slice(8).trim();const {error}=await sb.from('projects').insert({user_id:user.id,name:title,status:'active',description:'Created from ORION command.'});if(error)throw error;const reply='Project created: '+title;await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadProjects();
   }else
