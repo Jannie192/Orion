@@ -551,7 +551,28 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
 .voice-activation-card h2{margin:0 0 7px;color:#fff8df;letter-spacing:.08em;font-size:20px}.voice-activation-card p{margin:0 0 20px;color:#a89d7b;font-size:12px;line-height:1.6}.voice-activate-btn{width:100%;height:50px;border:1px solid #e6b84a;border-radius:14px;background:linear-gradient(135deg,#241d0b,#0d0a05);color:#fff1bd;font-weight:800;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 0 22px rgba(230,184,74,.12)}
 @keyframes voiceActivatePulse{50%{box-shadow:0 0 55px rgba(230,184,74,.24),inset 0 0 35px rgba(230,184,74,.10)}}
 </style>
-</head>
+<style id="mission-control-upgrade">
+.mission-control{display:grid;gap:12px}
+.mc-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.mc-kpi{padding:12px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(145deg,rgba(24,21,11,.9),rgba(10,9,7,.92))}
+.mc-kpi .mc-num{font-size:22px;font-weight:800;color:var(--accent);margin-top:4px}
+.mc-kpi .mc-label{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.mc-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mc-filter{height:34px;padding:0 10px;border:1px solid var(--line);border-radius:9px;background:#0a0907;color:var(--text);font-size:10px;text-transform:uppercase}
+.mc-live{margin-left:auto;font-size:9px;color:var(--muted);letter-spacing:.1em}
+.mc-list{display:grid;gap:8px}
+.mc-card{border:1px solid var(--line);border-radius:12px;background:rgba(13,12,9,.82);padding:12px;cursor:pointer}
+.mc-card:hover{border-color:rgba(230,184,74,.45);transform:translateY(-1px)}
+.mc-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.mc-title{font-weight:700}
+.mc-meta{font-size:10px;color:var(--muted);margin-top:4px}
+.mc-badges{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.mc-badge{font-size:8px;padding:4px 6px;border-radius:999px;border:1px solid var(--line);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.mc-progress{height:4px;background:#080806;border-radius:999px;overflow:hidden;margin-top:10px}.mc-progress i{display:block;height:100%;background:var(--accent)}
+.mc-empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+@media(max-width:900px){.mc-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.mc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.mc-live{width:100%;margin-left:0}}
+</style></head>
 <body>
 
 <div id="login" class="shell login"><div class="card">
@@ -631,7 +652,21 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
 <div class="autonomy-grid"><div class="autonomy-card"><h3>What ORION is doing now</h3><div id="autonomyCurrent" class="autonomy-current">No active work detected.<span>ORION will show its current mission and step here.</span></div><div class="autonomy-metrics" style="margin-top:12px"><div class="autonomy-metric"><b id="autonomyCompleted">0</b><span>Completed away</span></div><div class="autonomy-metric"><b id="autonomyWaiting">0</b><span>Needs approval</span></div><div class="autonomy-metric"><b id="autonomyErrors">0</b><span>Issues</span></div><div class="autonomy-metric"><b id="autonomyMissions">0</b><span>Active missions</span></div></div></div>
 <div class="autonomy-card"><h3>Autonomy controls</h3><div class="autonomy-setting"><div><label for="autonomyPlanning">Autonomous planning</label><small>Let ORION decide when useful work should be created.</small></div><input id="autonomyPlanning" type="checkbox"></div><div class="autonomy-setting"><div><label for="autonomySteps">Steps per cycle</label><small>Maximum execution steps per worker cycle.</small></div><input id="autonomySteps" type="number" min="1" max="5" step="1" value="3"></div><div class="autonomy-setting"><div><label for="autonomyCooldown">Planning cooldown</label><small>Minimum minutes between autonomous planning decisions.</small></div><select id="autonomyCooldown"><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option><option value="120">2 hr</option><option value="360">6 hr</option><option value="1440">24 hr</option></select></div></div></div>
 <div class="autonomy-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">Worker activity</h3><button id="refreshAutonomy" class="autonomy-refresh">Refresh</button></div><div id="autonomyDecision" class="event-msg" style="margin:8px 0 4px">Last planner decision: —</div><div id="autonomyLog" class="autonomy-log" style="margin-top:6px"></div></div>
-</div></section></div><div class="tab-panel" id="tab-missionsTab"><section class="section"><div class="workspace-head"><div><h2 style="margin:0">Missions</h2><div class="workspace-meta">Objectives ORION can plan, execute, delegate and monitor.</div></div><span class="pill">ORION CONTROL</span></div><div id="missionWorkspace" class="mission-feed" style="margin-top:12px"></div></section></div>
+</div></section></div><div class="tab-panel" id="tab-missionsTab"><section class="section"><div class="workspace-head"><div><h2 style="margin:0">Missions</h2><div class="workspace-meta">Objectives ORION can plan, execute, delegate and monitor.</div></div><span class="pill">ORION CONTROL</span></div><div id="missionWorkspace" class="mission-feed" style="margin-top:12px"></div><div class="mission-control" id="missionControl">
+<div class="mc-kpis">
+<div class="mc-kpi"><div class="mc-label">Active</div><div class="mc-num" id="mcActive">0</div></div>
+<div class="mc-kpi"><div class="mc-label">Queued</div><div class="mc-num" id="mcQueued">0</div></div>
+<div class="mc-kpi"><div class="mc-label">Blocked</div><div class="mc-num" id="mcBlocked">0</div></div>
+<div class="mc-kpi"><div class="mc-label">Waiting</div><div class="mc-num" id="mcWaiting">0</div></div>
+<div class="mc-kpi"><div class="mc-label">Completed</div><div class="mc-num" id="mcCompleted">0</div></div>
+<div class="mc-kpi"><div class="mc-label">Verified</div><div class="mc-num" id="mcVerified">0</div></div>
+</div>
+<div class="mc-toolbar">
+<select id="mcFilter" class="mc-filter"><option value="all">All missions</option><option value="active">Active</option><option value="planned">Queued</option><option value="blocked">Blocked</option><option value="waiting">Waiting</option><option value="completed">Completed</option></select>
+<button class="tab" id="mcRefresh">Refresh control</button><span class="mc-live" id="mcLive">MISSION CONTROL · LIVE</span>
+</div>
+<div id="mcList" class="mc-list"></div>
+</div></section></div>
 <div class="tab-panel" id="tab-projectsTab"><section class="section"><div class="workspace-head"><div><h2 style="margin:0">Projects</h2><div class="workspace-meta">Long-running work stays visible even when individual tasks change.</div></div></div><div id="projectWorkspace" class="tools" style="margin-top:12px"></div></section></div>
 <div class="tab-panel" id="tab-agentsTab"><section class="section"><h2>Agent Network</h2><p class="sub">Each agent has its own operating space. ORION coordinates the network and receives their results.</p><div id="agentTabs" class="subtabs"></div><div id="agentWorkspace" class="workspace-card"><div class="empty-state">Select an agent to open its workspace.</div></div><div id="agents" class="hidden"></div></section></div>
 <div class="tab-panel" id="tab-toolsTab"><section class="section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><h2 style="margin:0">Tools & connectors</h2><button class="btn" id="addTool" style="height:36px;padding:0 12px;font-size:11px">+ Add tool</button></div><div id="tools" class="tools"></div></section><section class="section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><h2 style="margin:0">Connections</h2><div style="display:flex;gap:7px"><button class="btn" id="discoverMcp" style="height:36px;padding:0 12px;font-size:11px">Discover MCP</button><button class="btn" id="addGitHub" style="height:36px;padding:0 12px;font-size:11px">+ Connect GitHub</button></div></div><div id="connections" class="card"></div></section><section class="section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><h2 style="margin:0">Capability Requests</h2><span class="pill">ORION BROKER</span></div><p class="sub">Agents can ask ORION for missing capabilities. Safe existing capabilities may be granted automatically; connection or new-capability requests remain visible here.</p><div id="capabilityRequests" class="tools"></div></section><section class="section"><h2>Discovered MCP capabilities</h2><div id="mcpActions" class="tools"></div></section></div>
@@ -705,14 +740,25 @@ async function loadStats(){const q=async(table)=>{const r=await sb.from(table).s
 async function loadTools(){const {data,error}=await sb.from('tools').select('id,name,slug,description,enabled,execution_mode,risk_level,requires_connection,version').eq('user_id',user.id).order('name');if(error)return;$('tools').innerHTML=(data||[]).map(t=>'<div class="tool"><div class="tool-head"><strong>'+esc(t.name)+'</strong><span class="pill">'+(t.enabled?'ENABLED':'DISABLED')+'</span></div><div class="tool-meta">'+esc(t.description||'No description')+'</div><div class="tool-meta">'+esc(t.execution_mode||'custom')+' · '+esc(t.risk_level||'medium')+(t.requires_connection?' · connection required':'')+' · v'+esc(t.version||1)+'</div><div class="tool-actions"><button onclick="toggleTool(\''+t.id+'\','+(!t.enabled)+')">'+(t.enabled?'Disable':'Enable')+'</button>'+(t.requires_connection?'<button onclick="connectTool(\''+t.id+'\')">Connect</button>':'')+'<button onclick="deleteTool(\''+t.id+'\')">Remove</button></div></div>').join('')||'<div class="card">No tools registered.</div>'} async function toggleTool(id,enabled){await sb.from('tools').update({enabled,updated_at:new Date().toISOString()}).eq('id',id).eq('user_id',user.id);await loadTools()} async function deleteTool(id){if(!confirm('Remove this tool from ORION?'))return;await sb.from('tools').delete().eq('id',id).eq('user_id',user.id);await loadTools()} window.toggleTool=toggleTool;window.deleteTool=deleteTool;
 async function loadAgents(){const {data}=await sb.from('agents').select('name,slug,description,enabled').order('name');$('agents').innerHTML=(data||[]).map(a=>'<div class="agent-panel"><div class="agent-top"><div class="agent-avatar">'+esc((a.name||'A').slice(0,1).toUpperCase())+'</div><strong>'+esc(a.name)+' <i></i></strong></div><span>'+esc(a.description||'Core agent')+'</span></div>').join('')}
 async function loadMissions(){
- const {data,error}=await sb.from('orion_missions').select('id,title,description,status,priority,progress,due_at,updated_at').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(30);
+ const {data,error}=await sb.from('orion_missions').select('id,title,description,status,priority,progress,due_at,updated_at,metadata').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(50);
  if(error){$('missionFeed').innerHTML='<div class="empty-state">Mission engine unavailable.</div>';return}
- const render=m=>{const arr=m||[];$('missionCount').textContent=arr.filter(x=>['planned','active','blocked'].includes(x.status)).length;
- const card=x=>'<div class="mission mission-row" onclick="openMission(\''+x.id+'\')"><div style="display:flex;justify-content:space-between;gap:10px"><strong>'+esc(x.title)+'</strong><span class="mission-status">'+esc(x.status)+'</span></div><span>'+esc(x.description||'No mission description')+'</span><div class="mission-bar"><i style="width:'+Math.max(0,Math.min(100,Number(x.progress)||0))+'%"></i></div><span>'+esc(x.priority)+' · '+(Number(x.progress)||0)+'% complete</span></div>';
+ const arr=data||[];
+ const active=arr.filter(x=>['active','running','executing'].includes(x.status)).length;
+ const queued=arr.filter(x=>['planned','queued'].includes(x.status)).length;
+ const blocked=arr.filter(x=>x.status==='blocked').length;
+ const waiting=arr.filter(x=>['waiting','waiting_for_approval','needs_input'].includes(x.status)).length;
+ const completed=arr.filter(x=>x.status==='completed').length;
+ let verified=0;
+ try{const ids=arr.filter(x=>x.status==='completed').map(x=>x.id);if(ids.length){const q=await sb.from('orion_verifications').select('mission_id').eq('user_id',user.id).in('mission_id',ids);verified=new Set((q.data||[]).map(x=>x.mission_id)).size}}catch{}
+ $('mcActive').textContent=active;$('mcQueued').textContent=queued;$('mcBlocked').textContent=blocked;$('mcWaiting').textContent=waiting;$('mcCompleted').textContent=completed;$('mcVerified').textContent=verified;
+ $('missionCount').textContent=active+queued+blocked+waiting;
+ const card=x=>'<div class="mc-card" onclick="openMission(\''+x.id+'\')"><div class="mc-top"><div><div class="mc-title">'+esc(x.title)+'</div><div class="mc-meta">'+esc(x.description||'No mission description')+'</div></div><div class="mc-badges"><span class="mc-badge">'+esc(x.status)+'</span><span class="mc-badge">'+esc(x.priority||'normal')+'</span></div></div><div class="mc-progress"><i style="width:'+Math.max(0,Math.min(100,Number(x.progress)||0))+'%"></i></div><div class="mc-meta">'+(Number(x.progress)||0)+'% complete · Updated '+new Date(x.updated_at||Date.now()).toLocaleString()+(x.due_at?' · Due '+new Date(x.due_at).toLocaleString():'')+'</div></div>';
  $('missionFeed').innerHTML=arr.length?arr.slice(0,6).map(card).join(''):'<div class="empty-state">No missions yet. Try: mission Build the first 10 Obsidian Solutions clients</div>';
- $('missionWorkspace').innerHTML=arr.length?arr.map(card).join(''):'<div class="empty-state">No missions yet. Give ORION an objective from the command bar.</div>'; };
- render(data||[]);
+ const filter=$('mcFilter')?.value||'all'; const filtered=filter==='all'?arr:arr.filter(x=>filter==='active'?['active','running','executing'].includes(x.status):filter==='planned'?['planned','queued'].includes(x.status):filter==='waiting'?['waiting','waiting_for_approval','needs_input'].includes(x.status):x.status===filter);
+ $('mcList').innerHTML=filtered.length?filtered.map(card).join(''):'<div class="mc-empty">No missions in this state.</div>';
 }
+window.refreshMissionControl=loadMissions;
+
 async function openMission(id){
  const [{data:m},{data:steps},{data:events}]=await Promise.all([
   sb.from('orion_missions').select('*').eq('id',id).eq('user_id',user.id).single(),
