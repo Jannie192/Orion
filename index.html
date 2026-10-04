@@ -913,6 +913,7 @@ async function speakText(text){
   window.__orionVoiceSpeaking=true;
   if(window.setOrionState)window.setOrionState('speaking');
   const clean=String(text).replace(/[*_#]/g,'').trim();
+  window.__orionLastSpokenText=clean;
   if(window.__orionKokoroSpeak){
     try{
       if($('voiceStatus'))$('voiceStatus').textContent='ORION VOICE LOADING';
@@ -932,7 +933,10 @@ async function speakText(text){
   const preferred=voices.find(v=>/^en-ZA/i.test(v.lang))||voices.find(v=>/^en-GB/i.test(v.lang))||voices.find(v=>/^en-US/i.test(v.lang))||voices.find(v=>/^en/i.test(v.lang));
   if(preferred)u.voice=preferred;
   u.lang=preferred?.lang||'en-ZA';u.rate=.94;u.pitch=.82;u.volume=1;
-  u.onstart=()=>{if($('voiceStatus'))$('voiceStatus').textContent='ORION SPEAKING'};
+  u.onstart=()=>{
+    if($('voiceStatus'))$('voiceStatus').textContent='ORION SPEAKING';
+    if(orionVoiceMode&&!orionVoiceBusy)setTimeout(startOrionListening,160);
+  };
   u.onend=()=>{
     window.__orionVoiceSpeaking=false;
     if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'VOICE READY · LISTENING':'VOICE READY';
@@ -956,6 +960,12 @@ function stopOrionListening(){
 function startOrionListening(){
   if(!orionRecognition||!orionVoiceMode||orionVoiceBusy)return;
   try{orionRecognition.start()}catch{}
+}
+function isLikelyOrionEcho(spoken){
+  const heard=String(spoken||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  const last=String(window.__orionLastSpokenText||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  if(!heard||heard.length<8||!last)return false;
+  return last.includes(heard)||heard.includes(last.slice(0,Math.min(last.length,heard.length)));
 }
 function setupVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -989,9 +999,13 @@ function setupVoice(){
     if(e.error!=='aborted')setVoiceStatus('VOICE ERROR: '+(e.error||'UNKNOWN'));
   };
   orionRecognition.onresult=async e=>{
-    if(window.__orionVoiceSpeaking&&window.__orionStopSpeaking)window.__orionStopSpeaking();
     const spoken=e.results?.[0]?.[0]?.transcript?.trim();
     if(!spoken)return;
+    if(window.__orionVoiceSpeaking&&isLikelyOrionEcho(spoken)){
+      if(orionVoiceMode&&!orionVoiceBusy)setTimeout(startOrionListening,180);
+      return;
+    }
+    if(window.__orionVoiceSpeaking&&window.__orionStopSpeaking)window.__orionStopSpeaking();
     orionVoiceBusy=true;
     stopOrionListening();
     if(!orionVoiceMode)$('command').value=spoken;
@@ -1321,6 +1335,7 @@ window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let acti
     player.onended=()=>{if(activePlayer===player)activePlayer=null;if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY';if(window.setOrionState)window.setOrionState('idle')};
     player.onpause=()=>{if(activePlayer===player&&player.ended===false){if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'LISTENING…':'VOICE READY';if(window.setOrionState)window.setOrionState('idle')}};
     await player.play();
+    if(orionVoiceMode&&!orionVoiceBusy)setTimeout(startOrionListening,160);
   };
 })();
 </script>
