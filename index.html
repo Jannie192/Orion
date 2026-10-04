@@ -442,6 +442,38 @@ body:after{
 .orion-presence[data-state="executing"] .hud-core{box-shadow:0 0 28px rgba(109,199,255,1),0 0 90px rgba(38,139,255,.55),inset 0 0 22px rgba(255,255,255,.4)}
 @keyframes hudSpin{to{transform:rotate(360deg)}}@keyframes hudCore{0%,100%{transform:translate(-50%,-50%) scale(.94);opacity:.88}50%{transform:translate(-50%,-50%) scale(1.06);opacity:1}}
 @media(max-width:560px){.orion-presence{height:330px}.jarvis-hud{width:250px;height:250px}.hud-core{width:64px;height:64px}.hud-core span{inset:17px}}
+
+.auth-transition{
+  background:
+    radial-gradient(circle at 50% 43%,rgba(214,169,52,.12),transparent 28%),
+    radial-gradient(circle at 50% 50%,#181207 0,#090805 45%,#030302 78%);
+  backdrop-filter:blur(3px);
+}
+.auth-transition-inner{width:min(330px,82vw);text-align:center;transform:translateY(10px) scale(.97);animation:orionBootIn .55s ease forwards}
+.auth-hud{position:relative;width:190px;height:190px;margin:0 auto 20px;display:grid;place-items:center;filter:drop-shadow(0 0 22px rgba(222,176,54,.18))}
+.auth-hud-ring{position:absolute;inset:0;border:1px solid rgba(225,182,66,.22);border-radius:50%}
+.auth-ring-a{inset:12px;animation:authHudSpin 8s linear infinite}
+.auth-ring-b{inset:29px;border-color:rgba(255,222,119,.30);border-style:dashed;animation:authHudSpinReverse 6s linear infinite}
+.auth-ring-c{inset:48px;border-color:rgba(205,157,39,.34);animation:authHudSpin 4s linear infinite}
+.auth-hud-arc{position:absolute;border:1px solid transparent;border-top-color:rgba(255,222,119,.86);border-left-color:rgba(225,182,66,.32);border-radius:50%}
+.auth-arc-a{inset:4px;animation:authHudSpin 3.8s linear infinite}
+.auth-arc-b{inset:38px;border-top-color:rgba(216,166,45,.76);animation:authHudSpinReverse 2.8s linear infinite}
+.auth-hud-sweep{position:absolute;inset:18px;border-radius:50%;overflow:hidden;transform:rotate(-28deg);animation:authSweep 2.4s ease-in-out infinite}
+.auth-hud-sweep:after{content:'';position:absolute;left:50%;top:0;width:1px;height:50%;transform-origin:bottom center;background:linear-gradient(to top,rgba(255,232,153,.95),transparent);box-shadow:0 0 10px rgba(230,184,74,.8)}
+.auth-hud-core{width:48px;height:48px;border-radius:50%;position:relative;background:radial-gradient(circle,#fffbea 0 3%,#ffe9a1 8%,#e6b84a 20%,rgba(198,147,30,.28) 42%,transparent 72%);box-shadow:0 0 24px rgba(230,184,74,.7),0 0 65px rgba(214,163,42,.22);animation:authCorePulse 1.5s ease-in-out infinite}
+.auth-hud-core:before,.auth-hud-core:after{content:'';position:absolute;inset:7px;border:1px solid rgba(255,230,148,.5);border-radius:50%}
+.auth-hud-core:after{inset:-6px;border-color:rgba(218,173,57,.2);animation:authHudSpinReverse 3s linear infinite}
+.auth-hud-core i{position:absolute;inset:17px;border-radius:50%;background:#fff8d8;box-shadow:0 0 14px #fff0a6}
+.auth-hud-label{position:absolute;bottom:29px;font-size:7px;letter-spacing:.28em;color:#f0d27a;text-shadow:0 0 10px rgba(230,184,74,.6)}
+.auth-transition-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:#f0d27a;text-shadow:0 0 12px rgba(230,184,74,.25)}
+.auth-transition-sub{font-size:11px;color:#8f835f;margin-top:7px}
+.auth-progress{height:2px;width:150px;margin:14px auto 0;background:#28200e;border-radius:99px;overflow:hidden}
+.auth-progress i{display:block;width:38%;height:100%;background:linear-gradient(90deg,transparent,#e6b84a,#fff0a6,transparent);box-shadow:0 0 10px rgba(230,184,74,.8);animation:authProgress 1.35s ease-in-out infinite}
+@keyframes authHudSpin{to{transform:rotate(360deg)}}@keyframes authHudSpinReverse{to{transform:rotate(-360deg)}}
+@keyframes authSweep{0%,100%{transform:rotate(-35deg);opacity:.45}50%{transform:rotate(145deg);opacity:1}}
+@keyframes authCorePulse{0%,100%{transform:scale(.92);filter:brightness(.92)}50%{transform:scale(1.08);filter:brightness(1.12)}}
+@keyframes authProgress{0%{transform:translateX(-180%)}100%{transform:translateX(420%)}}
+@media(max-width:560px){.auth-hud{width:170px;height:170px}}
 </style><style id="ultron-palette">
 :root{
   --bg:#070706;--panel:#11100b;--panel2:#18150b;--line:#3a321b;
@@ -507,7 +539,21 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
 <button class="btn" id="signin" type="button">Sign in</button><button class="btn" id="signup" style="margin-top:8px;background:transparent">Create account</button><button class="auth-link" id="forgotPassword" type="button">Forgot password?</button><div id="resetPanel" class="reset-panel hidden"><h3>Reset your ORION password</h3><p>Enter your account email and ORION will send you a secure reset link.</p><input id="resetEmail" type="email" placeholder="Email" autocomplete="email"><button class="btn" id="sendReset" type="button">Send reset link</button></div>
 <div id="authmsg" class="error"></div><div class="tiny">ORION v0.4 · persistent core · approval-based autonomy</div>
 </div></div>
-<div id="authTransition" class="auth-transition hidden" aria-live="polite"><div class="auth-transition-inner"><div class="auth-core"><i></i></div><div id="authTransitionLabel" class="auth-transition-label">AUTHENTICATING</div><div id="authTransitionSub" class="auth-transition-sub">Establishing secure ORION session…</div></div></div>
+<div id="authTransition" class="auth-transition hidden" aria-live="polite"><div class="auth-transition-inner">
+  <div class="auth-hud" aria-hidden="true">
+    <div class="auth-hud-ring auth-ring-a"></div>
+    <div class="auth-hud-ring auth-ring-b"></div>
+    <div class="auth-hud-ring auth-ring-c"></div>
+    <div class="auth-hud-arc auth-arc-a"></div>
+    <div class="auth-hud-arc auth-arc-b"></div>
+    <div class="auth-hud-sweep"></div>
+    <div class="auth-hud-core"><i></i></div>
+    <div class="auth-hud-label">ORION</div>
+  </div>
+  <div id="authTransitionLabel" class="auth-transition-label">AUTHENTICATING</div>
+  <div id="authTransitionSub" class="auth-transition-sub">Establishing secure ORION session…</div>
+  <div class="auth-progress" aria-hidden="true"><i></i></div>
+</div></div>
 
 <div id="app" class="hidden dashboard-core-mode"><div class="shell">
 <div class="top"><div class="brand"><div class="orb"></div>ORION</div><div><span class="status"><i class="dot"></i> ONLINE</span><button class="logout" id="logout">Sign out</button></div></div>
