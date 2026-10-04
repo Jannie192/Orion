@@ -461,7 +461,7 @@ async function launchRevenueMission(){
  const objective='Find 10 real local businesses that appear to need a professional website. Discover and qualify each prospect using verifiable evidence, record the business and website details in the ORION lead pipeline, prioritize the strongest opportunities, and prepare approval-gated outreach. Never invent businesses, contacts, evidence, outreach, clients, payments, or revenue.';
  try{const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title+'\n\n'+objective}});if(error||!m?.ok)throw new Error(m?.error||error?.message||'Mission planning failed.');addFeed('ORION','Revenue mission planned. '+(m.steps?.length||0)+' execution steps created.','system');if(m.mission?.id)await runMission(m.mission.id);await loadRevenueEngine();await loadMissions();}catch(e){addFeed('ORION','Revenue mission failed to start: '+e.message,'system');}
 }
-\nasync function handleCommand(v,options={}){
+async function handleCommand(v,options={}){
   await saveMessage('user',v);addFeed('YOU',v,'you');
   const low=v.toLowerCase().replace(/[?!.,]/g,'').trim();
   if(low==='find 10 businesses'||low==='find ten businesses'||low.includes('website prospects')||low.includes('find businesses that need websites')||low==='revenue engine'){await launchRevenueMission();return;}\n  if(low.includes('what companies did you research')||low.includes('which companies did you research')||low.includes('show me the research')||low.includes('show research')||low.includes('tell me about the companies you researched')||low.includes('most promising companies')||low.includes('research you did')){
