@@ -539,7 +539,19 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
 .autonomy-toggle{border:1px solid #4a3b16;background:#171308;color:#e9d27c;border-radius:11px;padding:9px 12px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.autonomy-toggle.on{border-color:#a47f24;background:#201a0b}
 .autonomy-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}.autonomy-card{border:1px solid #2b2410;border-radius:15px;background:#0c0b08;padding:14px}.autonomy-card h3{margin:0 0 10px;font-size:12px}.autonomy-current{font-size:15px;font-weight:750}.autonomy-current span{display:block;font-size:10px;color:#857a5b;font-weight:500;margin-top:4px}.autonomy-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.autonomy-metric{padding:10px;border:1px solid #29220f;border-radius:11px;background:#100e09}.autonomy-metric b{display:block;font-size:17px}.autonomy-metric span{font-size:8px;color:#81775b;text-transform:uppercase;letter-spacing:.08em}.autonomy-setting{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #211b0d}.autonomy-setting:last-child{border-bottom:0}.autonomy-setting label{font-size:10px;color:#a69a75}.autonomy-setting small{display:block;color:#756b51;font-size:9px;margin-top:2px}.autonomy-setting input[type=number],.autonomy-setting select{background:#080805;border:1px solid #332a12;color:#eee2ae;border-radius:8px;padding:7px 8px;font-size:10px;width:82px}.autonomy-log{max-height:170px;overflow:auto}.autonomy-log-row{padding:8px 0;border-bottom:1px solid #211b0d;font-size:10px}.autonomy-log-row:last-child{border-bottom:0}.autonomy-log-row b{color:#d8c46e}.autonomy-log-row span{display:block;color:#756b51;margin-top:2px;font-size:9px}.autonomy-refresh{border:1px solid #332a12;background:#100e09;color:#bcae7b;border-radius:8px;padding:6px 9px;font-size:9px}
 @media(max-width:760px){.autonomy-grid{grid-template-columns:1fr}.autonomy-metrics{grid-template-columns:repeat(2,1fr)}.autonomy-hero{align-items:flex-start;flex-direction:column}.autonomy-toggle{width:100%}}
-</style></head>
+</style>
+<style id="voice-activation-fix">
+.voice-controls{position:relative;z-index:5;display:flex!important;visibility:visible!important;opacity:1!important;align-items:center;gap:12px;margin:16px 0 0}
+.voice-main{width:64px!important;height:64px!important;border-radius:20px!important;border:1px solid #e6b84a!important;background:linear-gradient(145deg,#1b1609,#080704)!important;box-shadow:0 0 0 1px rgba(230,184,74,.12),0 0 28px rgba(230,184,74,.12),inset 0 0 20px rgba(230,184,74,.07)!important}
+.voice-copy strong{color:#fff8df!important}.voice-copy span{color:#a89d7b!important}
+.voice-activation{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(230,184,74,.10),rgba(4,4,3,.97) 55%);padding:24px}
+.voice-activation.hidden{display:none}.voice-activation-card{width:min(420px,100%);text-align:center;padding:32px 24px;border:1px solid #3a321b;border-radius:24px;background:linear-gradient(145deg,#151208,#090806);box-shadow:0 30px 100px #000b,0 0 50px rgba(230,184,74,.08)}
+.voice-activation-core{width:110px;height:110px;margin:0 auto 20px;border:1px solid #e6b84a;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 35px rgba(230,184,74,.16),inset 0 0 30px rgba(230,184,74,.07);animation:voiceActivatePulse 2.2s ease-in-out infinite}
+.voice-activation-core:before{content:'';width:48px;height:48px;border:2px solid #e6b84a;border-radius:50%;box-shadow:0 0 18px rgba(230,184,74,.25)}
+.voice-activation-card h2{margin:0 0 7px;color:#fff8df;letter-spacing:.08em;font-size:20px}.voice-activation-card p{margin:0 0 20px;color:#a89d7b;font-size:12px;line-height:1.6}.voice-activate-btn{width:100%;height:50px;border:1px solid #e6b84a;border-radius:14px;background:linear-gradient(135deg,#241d0b,#0d0a05);color:#fff1bd;font-weight:800;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 0 22px rgba(230,184,74,.12)}
+@keyframes voiceActivatePulse{50%{box-shadow:0 0 55px rgba(230,184,74,.24),inset 0 0 35px rgba(230,184,74,.10)}}
+</style>
+</head>
 <body>
 
 <div id="login" class="shell login"><div class="card">
@@ -566,6 +578,7 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
   <div class="auth-progress" aria-hidden="true"><i></i></div>
 </div></div>
 
+<div id="voiceActivation" class="voice-activation hidden" aria-live="polite"><div class="voice-activation-card"><div class="voice-activation-core" aria-hidden="true"></div><h2>ORION VOICE</h2><p>Voice is ready. Tap once to activate the microphone and Orion's voice.</p><button id="activateVoice" class="voice-activate-btn">Activate ORION Voice</button></div></div>
 <div id="app" class="hidden dashboard-core-mode"><div class="shell">
 <div class="top"><div class="brand"><div class="orb"></div>ORION</div><div><span class="status"><i class="dot"></i> ONLINE</span><button class="logout" id="logout">Sign out</button></div></div>
 <section class="hero"><div class="eyebrow">PERSONAL AI OS</div>
@@ -674,7 +687,7 @@ async function showApp(u){
  const previousSeen=localStorage.getItem('orion_last_seen_at');
  $('login').classList.add('hidden');$('app').classList.remove('hidden');
  const clock=getOrionClockContext();$('greeting').textContent=clock.greeting;
- if(!booting){booting=true;try{await boot();const welcome=clock.greeting+' I’m ORION. I’m online and ready for you.';window.__orionLatestBriefing=welcome;addFeed('ORION',welcome,'system');try{await speakText(welcome)}catch(e){setVoiceStatus('TAP MIC TO START VOICE')}}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
+ if(!booting){booting=true;try{await boot();const welcome=clock.greeting+' I’m ORION. I’m online and ready for you.';window.__orionLatestBriefing=welcome;addFeed('ORION',welcome,'system');document.getElementById('voiceActivation')?.classList.remove('hidden')}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
 }
 function showLogin(){if(authBusy)return;$('app').classList.add('hidden');$('login').classList.remove('hidden');user=null;conversationId=null}
 function addFeed(role,content,kind=''){const el=document.createElement('div');el.className='msg '+kind;el.innerHTML='<div class="meta">'+esc(role)+'</div>'+esc(content).replace(/\n/g,'<br>');$('feed').prepend(el)}
@@ -1029,6 +1042,19 @@ function setupVoice(){
   };
 }
 setupVoice();
+function activateOrionVoice(){
+  const overlay=$('voiceActivation');
+  overlay?.classList.add('hidden');
+  orionVoiceMode=true;
+  if(!orionRecognition)setupVoice();
+  setVoiceStatus('MIC STARTING…');
+  $('voicePrompt')&&($('voicePrompt').textContent='LISTENING');
+  $('voiceListen')?.classList.add('listening');
+  try{startOrionListening()}catch(e){setVoiceStatus('MIC PERMISSION REQUIRED')}
+  const welcome=window.__orionLatestBriefing||'ORION voice is online. I am ready.';
+  speakText(welcome).catch(()=>setVoiceStatus('VOICE READY · TAP MIC TO TALK'));
+}
+
 
 
 async function loadRevenueEngine(){
@@ -1301,6 +1327,7 @@ $('voiceListen').onclick=()=>{
   }
 };
 $('voiceSpeak').onclick=()=>speakText(window.__orionLatestBriefing||'ORION voice is online. Ask me what is happening.');
+document.getElementById('activateVoice')?.addEventListener('click',activateOrionVoice);
 document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>{$('command').value=b.dataset.cmd;$('command').focus()});
 function initializeAuth(){ $('authmsg').textContent='Checking ORION session…'; }
 window.__ORION_MAIN_READY=true;
