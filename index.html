@@ -528,7 +528,15 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
 .orion-presence[data-state="listening"] .jarvis-hud{filter:sepia(.55) saturate(1.5) drop-shadow(0 0 32px rgba(218,173,57,.42))}
 .orion-presence[data-state="executing"] .hud-core{box-shadow:0 0 28px rgba(255,220,112,1),0 0 90px rgba(218,166,39,.55),inset 0 0 22px rgba(255,255,255,.4)}
 </style>
-</head>
+<style id="autonomy-ui">
+.autonomy-shell{display:grid;gap:12px}
+.autonomy-hero{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:16px;border:1px solid #2b2410;border-radius:16px;background:linear-gradient(145deg,#121008,#090906)}
+.autonomy-title{display:flex;align-items:center;gap:11px}.autonomy-dot{width:10px;height:10px;border-radius:50%;background:#6e5a24;box-shadow:0 0 0 transparent;transition:.2s}.autonomy-dot.on{background:#e6b84a;box-shadow:0 0 16px rgba(230,184,74,.65)}
+.autonomy-kicker{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#9d916b}.autonomy-state{font-size:18px;font-weight:820;margin-top:2px}.autonomy-meta{font-size:10px;color:#857a5b;margin-top:3px}
+.autonomy-toggle{border:1px solid #4a3b16;background:#171308;color:#e9d27c;border-radius:11px;padding:9px 12px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.autonomy-toggle.on{border-color:#a47f24;background:#201a0b}
+.autonomy-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}.autonomy-card{border:1px solid #2b2410;border-radius:15px;background:#0c0b08;padding:14px}.autonomy-card h3{margin:0 0 10px;font-size:12px}.autonomy-current{font-size:15px;font-weight:750}.autonomy-current span{display:block;font-size:10px;color:#857a5b;font-weight:500;margin-top:4px}.autonomy-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.autonomy-metric{padding:10px;border:1px solid #29220f;border-radius:11px;background:#100e09}.autonomy-metric b{display:block;font-size:17px}.autonomy-metric span{font-size:8px;color:#81775b;text-transform:uppercase;letter-spacing:.08em}.autonomy-setting{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #211b0d}.autonomy-setting:last-child{border-bottom:0}.autonomy-setting label{font-size:10px;color:#a69a75}.autonomy-setting small{display:block;color:#756b51;font-size:9px;margin-top:2px}.autonomy-setting input[type=number],.autonomy-setting select{background:#080805;border:1px solid #332a12;color:#eee2ae;border-radius:8px;padding:7px 8px;font-size:10px;width:82px}.autonomy-log{max-height:170px;overflow:auto}.autonomy-log-row{padding:8px 0;border-bottom:1px solid #211b0d;font-size:10px}.autonomy-log-row:last-child{border-bottom:0}.autonomy-log-row b{color:#d8c46e}.autonomy-log-row span{display:block;color:#756b51;margin-top:2px;font-size:9px}.autonomy-refresh{border:1px solid #332a12;background:#100e09;color:#bcae7b;border-radius:8px;padding:6px 9px;font-size:9px}
+@media(max-width:760px){.autonomy-grid{grid-template-columns:1fr}.autonomy-metrics{grid-template-columns:repeat(2,1fr)}.autonomy-hero{align-items:flex-start;flex-direction:column}.autonomy-toggle{width:100%}}
+</style></head>
 <body>
 
 <div id="login" class="shell login"><div class="card">
@@ -591,14 +599,19 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
 
 <div class="tabs" id="mainTabs">
 <button class="tab active" data-tab="command">Command Center</button>
-<button class="tab" data-tab="missionsTab">Missions</button>
+<button class="tab" data-tab="autonomyTab">Autonomy</button><button class="tab" data-tab="missionsTab">Missions</button>
 <button class="tab" data-tab="projectsTab">Projects</button>
 <button class="tab" data-tab="agentsTab">Agents</button>
 <button class="tab" data-tab="toolsTab">Tools & Connectors</button>
 <button class="tab" data-tab="activityTab">Activity</button><button class="tab" data-tab="revenueTab">Revenue Engine</button><button class="tab" data-tab="researchTab">Research</button>
 </div>
 <div class="tab-panel active" id="tab-command"><div class="layout"><div><section class="section"><h2>Command feed</h2><div id="feed" class="card feed"></div></section><section class="section"><h2>Mission status</h2><div id="missionFeed" class="mission-feed"></div></section></div><div><section class="section"><h2>ORION OS</h2><div class="card side-list"><div class="row"><span>Memory</span><b id="memoryCount">—</b></div><div class="row"><span>Tasks</span><b id="taskSideCount">—</b></div><div class="row"><span>Goals</span><b id="goalCount">—</b></div><div class="row"><span>Projects</span><b id="projectCount">—</b></div><div class="row"><span>Active missions</span><b id="missionCount">—</b></div></div></section></div></div></div>
-<div class="tab-panel" id="tab-missionsTab"><section class="section"><div class="workspace-head"><div><h2 style="margin:0">Missions</h2><div class="workspace-meta">Objectives ORION can plan, execute, delegate and monitor.</div></div><span class="pill">ORION CONTROL</span></div><div id="missionWorkspace" class="mission-feed" style="margin-top:12px"></div></section></div>
+<div class="tab-panel" id="tab-autonomyTab"><section class="section"><div class="autonomy-shell">
+<div class="autonomy-hero"><div class="autonomy-title"><div id="autonomyDot" class="autonomy-dot"></div><div><div class="autonomy-kicker">ORION BACKGROUND WORKER</div><div id="autonomyState" class="autonomy-state">AUTONOMOUS MODE: OFF</div><div id="autonomyMeta" class="autonomy-meta">Waiting for autonomy status…</div></div></div><button id="autonomyToggle" class="autonomy-toggle">Enable autonomy</button></div>
+<div class="autonomy-grid"><div class="autonomy-card"><h3>What ORION is doing now</h3><div id="autonomyCurrent" class="autonomy-current">No active work detected.<span>ORION will show its current mission and step here.</span></div><div class="autonomy-metrics" style="margin-top:12px"><div class="autonomy-metric"><b id="autonomyCompleted">0</b><span>Completed away</span></div><div class="autonomy-metric"><b id="autonomyWaiting">0</b><span>Needs approval</span></div><div class="autonomy-metric"><b id="autonomyErrors">0</b><span>Issues</span></div><div class="autonomy-metric"><b id="autonomyMissions">0</b><span>Active missions</span></div></div></div>
+<div class="autonomy-card"><h3>Autonomy controls</h3><div class="autonomy-setting"><div><label for="autonomyPlanning">Autonomous planning</label><small>Let ORION decide when useful work should be created.</small></div><input id="autonomyPlanning" type="checkbox"></div><div class="autonomy-setting"><div><label for="autonomySteps">Steps per cycle</label><small>Maximum execution steps per worker cycle.</small></div><input id="autonomySteps" type="number" min="1" max="5" step="1" value="3"></div><div class="autonomy-setting"><div><label for="autonomyCooldown">Planning cooldown</label><small>Minimum minutes between autonomous planning decisions.</small></div><select id="autonomyCooldown"><option value="5">5 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">60 min</option><option value="120">2 hr</option><option value="360">6 hr</option><option value="1440">24 hr</option></select></div></div></div>
+<div class="autonomy-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">Worker activity</h3><button id="refreshAutonomy" class="autonomy-refresh">Refresh</button></div><div id="autonomyLog" class="autonomy-log" style="margin-top:6px"></div></div>
+</div></section></div><div class="tab-panel" id="tab-missionsTab"><section class="section"><div class="workspace-head"><div><h2 style="margin:0">Missions</h2><div class="workspace-meta">Objectives ORION can plan, execute, delegate and monitor.</div></div><span class="pill">ORION CONTROL</span></div><div id="missionWorkspace" class="mission-feed" style="margin-top:12px"></div></section></div>
 <div class="tab-panel" id="tab-projectsTab"><section class="section"><div class="workspace-head"><div><h2 style="margin:0">Projects</h2><div class="workspace-meta">Long-running work stays visible even when individual tasks change.</div></div></div><div id="projectWorkspace" class="tools" style="margin-top:12px"></div></section></div>
 <div class="tab-panel" id="tab-agentsTab"><section class="section"><h2>Agent Network</h2><p class="sub">Each agent has its own operating space. ORION coordinates the network and receives their results.</p><div id="agentTabs" class="subtabs"></div><div id="agentWorkspace" class="workspace-card"><div class="empty-state">Select an agent to open its workspace.</div></div><div id="agents" class="hidden"></div></section></div>
 <div class="tab-panel" id="tab-toolsTab"><section class="section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><h2 style="margin:0">Tools & connectors</h2><button class="btn" id="addTool" style="height:36px;padding:0 12px;font-size:11px">+ Add tool</button></div><div id="tools" class="tools"></div></section><section class="section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><h2 style="margin:0">Connections</h2><div style="display:flex;gap:7px"><button class="btn" id="discoverMcp" style="height:36px;padding:0 12px;font-size:11px">Discover MCP</button><button class="btn" id="addGitHub" style="height:36px;padding:0 12px;font-size:11px">+ Connect GitHub</button></div></div><div id="connections" class="card"></div></section><section class="section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><h2 style="margin:0">Capability Requests</h2><span class="pill">ORION BROKER</span></div><p class="sub">Agents can ask ORION for missing capabilities. Safe existing capabilities may be granted automatically; connection or new-capability requests remain visible here.</p><div id="capabilityRequests" class="tools"></div></section><section class="section"><h2>Discovered MCP capabilities</h2><div id="mcpActions" class="tools"></div></section></div>
@@ -771,7 +784,41 @@ initTabs();renderMissions();
 $('launchRevenueMission').onclick=launchRevenueMission;$('refreshRevenue').onclick=loadRevenueEngine;
 $('refreshResearch').onclick=()=>loadResearch($('researchSearch').value);
 $('researchSearch').addEventListener('input',()=>loadResearch($('researchSearch').value));
-async function boot(){await ensureAgents();await ensureTools();await ensureAgentTools();await loadStats();await loadAgents();await loadAgentTabs();await loadTools();await loadConnections();await loadMcpActions(); await loadCapabilityRequests();await loadMissions();await loadProjects();await loadAgentEvents();await loadRevenueEngine();await loadResearch();try{await ensureConversation();await loadMessages()}catch(e){addFeed('ORION','Workspace initialized, but conversation persistence reported: '+e.message,'system')}}
+async function loadAutonomyDashboard(){
+ if(!user)return;
+ const settingsQ=sb.from('orion_autonomy_settings').select('enabled,planning_enabled,max_steps_per_cycle,planning_cooldown_minutes,last_planned_at,updated_at').eq('user_id',user.id).maybeSingle();
+ const missionsQ=sb.from('orion_missions').select('id,title,status,progress,updated_at').eq('user_id',user.id).in('status',['active','blocked']).order('updated_at',{ascending:false}).limit(8);
+ const runsQ=sb.from('orion_autopilot_runs').select('id,started_at,completed_at,status,missions_seen,missions_processed,details,error').order('started_at',{ascending:false}).limit(8);
+ const approvalsQ=sb.from('action_requests').select('id,status,description,created_at').eq('user_id',user.id).eq('status','pending').order('created_at',{ascending:false}).limit(20);
+ const capsQ=sb.from('orion_capability_requests').select('id,status,capability,reason,created_at').eq('user_id',user.id).eq('status','pending').order('created_at',{ascending:false}).limit(20);
+ const runsDoneQ=sb.from('orion_mission_runs').select('id,status,completed_at,result,error,mission_id').eq('user_id',user.id).eq('status','completed').order('completed_at',{ascending:false}).limit(50);
+ const [settings,missions,runs,approvals,caps,done]=await Promise.all([settingsQ,missionsQ,runsQ,approvalsQ,capsQ,runsDoneQ]);
+ const s=settings.data||{enabled:false,planning_enabled:true,max_steps_per_cycle:3,planning_cooldown_minutes:30};
+ $('autonomyState').textContent=s.enabled?'AUTONOMOUS MODE: ACTIVE':'AUTONOMOUS MODE: OFF';
+ $('autonomyMeta').textContent=s.enabled?(s.planning_enabled?'Planning enabled · worker checks every 5 minutes':'Execution enabled · autonomous planning paused'):'Background execution is paused.';
+ $('autonomyDot').classList.toggle('on',!!s.enabled); $('autonomyToggle').classList.toggle('on',!!s.enabled); $('autonomyToggle').textContent=s.enabled?'Disable autonomy':'Enable autonomy';
+ $('autonomyPlanning').checked=!!s.planning_enabled; $('autonomySteps').value=s.max_steps_per_cycle||3; $('autonomyCooldown').value=String(s.planning_cooldown_minutes||30);
+ const ms=missions.data||[], active=ms.find(x=>x.status==='active');
+ $('autonomyMissions').textContent=String(ms.filter(x=>x.status==='active').length);
+ $('autonomyCompleted').textContent=String((done.data||[]).filter(x=>x.completed_at && new Date(x.completed_at)>new Date(Date.now()-24*60*60*1000)).length);
+ $('autonomyWaiting').textContent=String((approvals.data||[]).length+(caps.data||[]).length);
+ $('autonomyErrors').textContent=String((runs.data||[]).filter(x=>x.status==='failed'||x.error).length);
+ if(active){
+   const {data:step}=await sb.from('orion_mission_steps').select('title,status,step_order,result').eq('mission_id',active.id).eq('user_id',user.id).in('status',['ready','running','in_progress','blocked']).order('step_order').limit(1).maybeSingle();
+   $('autonomyCurrent').innerHTML='<strong>'+esc(active.title)+'</strong><span>'+esc(step?.title||'Mission is active; worker is evaluating the next step.')+' · '+esc(active.status)+' · '+(Number(active.progress)||0)+'% complete</span>';
+ }else{
+   $('autonomyCurrent').innerHTML='No active mission right now.<span>ORION is waiting for useful work or a new objective.</span>';
+ }
+ const log=runs.data||[];
+ $('autonomyLog').innerHTML=log.length?log.map(r=>'<div class="autonomy-log-row"><b>'+esc(String(r.status||'unknown').toUpperCase())+'</b> · '+esc(r.missions_processed==null?'—':String(r.missions_processed))+' missions processed<span>'+new Date(r.started_at).toLocaleString()+(r.error?' · '+esc(r.error):'')+'</span></div>').join(''):'<div class="empty-state">No worker cycles recorded yet.</div>';
+}
+async function updateAutonomySetting(patch){
+ if(!user)return;
+ const {error}=await sb.from('orion_autonomy_settings').upsert({user_id:user.id,...patch,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+ if(error){addFeed('ORION','Could not update autonomy: '+error.message,'system');return}
+ await loadAutonomyDashboard();
+}
+async function boot(){await ensureAgents();await ensureTools();await ensureAgentTools();await loadStats();await loadAutonomyDashboard();await loadAgents();await loadAgentTabs();await loadTools();await loadConnections();await loadMcpActions(); await loadCapabilityRequests();await loadMissions();await loadProjects();await loadAgentEvents();await loadRevenueEngine();await loadResearch();try{await ensureConversation();await loadMessages()}catch(e){addFeed('ORION','Workspace initialized, but conversation persistence reported: '+e.message,'system')}}
 async function saveMessage(role,content){const cid=await ensureConversation();const {error}=await sb.from('messages').insert({conversation_id:cid,user_id:user.id,role,content,metadata:{source:'command-center'}});if(error)throw error}
 async function renderAction(a){
   const el=document.createElement('div');el.className='action-card';el.dataset.id=a.id;
