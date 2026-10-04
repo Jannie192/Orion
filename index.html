@@ -438,6 +438,9 @@ body:after{
 .orion-state{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#71839b;white-space:nowrap}
 .orion-presence[data-state="listening"] .jarvis-hud{transform:perspective(700px) rotateX(8deg) scale(1.035);filter:drop-shadow(0 0 32px rgba(65,165,255,.42))}
 .orion-presence[data-state="thinking"] .hud-ring,.orion-presence[data-state="thinking"] .hud-arc{animation-duration:4s}
+.orion-presence[data-state="thinking"] .hud-core{animation-duration:.8s;box-shadow:0 0 34px rgba(109,199,255,1),0 0 100px rgba(38,139,255,.55),inset 0 0 24px rgba(255,255,255,.5)}
+.orion-presence[data-state="speaking"] .hud-core{animation-duration:.38s;box-shadow:0 0 38px rgba(109,199,255,1),0 0 120px rgba(38,139,255,.62),inset 0 0 28px rgba(255,255,255,.55)}
+.orion-presence[data-state="speaking"] .hud-ring,.orion-presence[data-state="speaking"] .hud-arc{animation-duration:2.2s}
 .orion-presence[data-state="researching"] .hud-sweep{animation-duration:2s}
 .orion-presence[data-state="executing"] .hud-core{box-shadow:0 0 28px rgba(109,199,255,1),0 0 90px rgba(38,139,255,.55),inset 0 0 22px rgba(255,255,255,.4)}
 @keyframes hudSpin{to{transform:rotate(360deg)}}@keyframes hudCore{0%,100%{transform:translate(-50%,-50%) scale(.94);opacity:.88}50%{transform:translate(-50%,-50%) scale(1.06);opacity:1}}
