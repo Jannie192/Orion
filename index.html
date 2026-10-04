@@ -387,6 +387,29 @@ body:after{
   .dashboard-core-mode .neural-core{width:82px;height:82px}
 }
 </style>
+<style>
+/* ORION precision core v3 */
+.orion-presence{position:relative;width:min(560px,92vw);height:min(430px,76vw);margin:0 auto 12px;display:grid;place-items:center;isolation:isolate;overflow:visible}
+.orion-presence:before{content:"";position:absolute;width:72%;height:28%;bottom:8%;left:14%;border-radius:50%;background:radial-gradient(ellipse,rgba(91,150,255,.18),rgba(91,150,255,.05) 38%,transparent 72%);filter:blur(18px)}
+.orion-neural{position:relative;width:clamp(220px,46vw,320px);height:clamp(220px,46vw,320px);border-radius:50%;filter:drop-shadow(0 0 28px rgba(82,150,255,.16));transform-style:preserve-3d;transition:transform .35s ease,filter .35s ease}
+.orion-neural:before{content:"";position:absolute;inset:4%;border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.9) 0 1%,rgba(161,213,255,.38) 5%,transparent 17%),radial-gradient(circle at 50% 50%,rgba(70,143,255,.2),rgba(16,35,62,.28) 48%,rgba(3,10,20,.86) 72%,rgba(4,8,14,.98) 100%);border:1px solid rgba(164,210,255,.4);box-shadow:inset -22px -28px 60px rgba(0,0,0,.62),inset 14px 10px 38px rgba(116,185,255,.12),0 0 55px rgba(76,151,255,.16);animation:orionSphereBreath 4.8s ease-in-out infinite}
+.orion-neural:after{content:"";position:absolute;inset:-5%;border:1px solid rgba(119,181,255,.22);border-radius:50%;transform:rotateX(68deg) scaleY(.32);box-shadow:0 0 22px rgba(80,160,255,.12);animation:orionHalo 8s linear infinite}
+.neural-ring{position:absolute;inset:0;border:1px solid rgba(134,198,255,.28);border-radius:50%;transform:rotateX(68deg) scaleY(.32);box-shadow:0 0 12px rgba(88,165,255,.12);animation:orionHalo 7s linear infinite;pointer-events:none}
+.neural-ring.r2{inset:-2%;transform:rotateY(68deg) scaleX(.32);animation-duration:10s;animation-direction:reverse}
+.neural-ring.r3{inset:8%;transform:rotateX(72deg) rotateZ(58deg) scaleY(.28);animation-duration:6s;opacity:.65}
+.neural-nodes,.neural-links,.orion-face{display:none!important}
+.neural-core{position:absolute;left:50%;top:50%;width:clamp(54px,10vw,76px);height:clamp(54px,10vw,76px);transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(211,237,255,.85);background:radial-gradient(circle at 42% 34%,#fff 0 5%,#c5e8ff 9%,#6ebaff 20%,rgba(57,139,255,.48) 34%,rgba(40,112,255,.12) 52%,transparent 70%);box-shadow:0 0 18px rgba(170,220,255,.85),0 0 48px rgba(65,148,255,.5),0 0 110px rgba(45,118,255,.18),inset 0 0 20px rgba(255,255,255,.45);animation:orionCoreBreath 3.2s ease-in-out infinite;z-index:4}
+.neural-core:before,.neural-core:after{content:"";position:absolute;inset:-18%;border-radius:50%;border:1px solid rgba(132,198,255,.22)}
+.neural-core:before{animation:orionHalo 4.5s linear infinite}.neural-core:after{inset:-34%;border-color:rgba(105,181,255,.1);animation:orionHaloReverse 7s linear infinite}
+.orion-state{bottom:-6px;color:#7891ad;letter-spacing:.24em}
+.orion-presence[data-state="listening"] .orion-neural{transform:scale(1.025);filter:drop-shadow(0 0 42px rgba(92,169,255,.3))}
+.orion-presence[data-state="thinking"] .neural-core{animation-duration:1.2s}.orion-presence[data-state="researching"] .neural-ring{animation-duration:2.2s;opacity:1}.orion-presence[data-state="executing"] .orion-neural{filter:drop-shadow(0 0 52px rgba(114,224,173,.24))}
+@keyframes orionSphereBreath{0%,100%{transform:scale(.985)}50%{transform:scale(1.01)}}
+@keyframes orionCoreBreath{0%,100%{transform:translate(-50%,-50%) scale(.88);opacity:.82}50%{transform:translate(-50%,-50%) scale(1.08);opacity:1}}
+@keyframes orionHalo{to{transform:rotateX(68deg) scaleY(.32) rotateZ(360deg)}}
+@keyframes orionHaloReverse{to{transform:rotateX(68deg) scaleY(.32) rotateZ(-360deg)}}
+@media(max-width:560px){.orion-presence{height:300px}.orion-neural{width:230px;height:230px}}
+</style>
 </head>
 <body>
 <div id="login" class="shell login"><div class="card">
