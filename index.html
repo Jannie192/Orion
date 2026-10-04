@@ -886,7 +886,7 @@ async function requestBriefing({speak=true,since}={}){
   const {data,error}=await sb.functions.invoke('orion-briefing',{body:{since:last}});
   localStorage.setItem('orion_last_seen_at',new Date().toISOString());
   if(error||!data?.ok)throw new Error(data?.error||error?.message||'Briefing unavailable.');
-  const reply=data.spoken||'ORION has no briefing to report yet.';
+  const reply=getTimeGreeting()+' '+(data.spoken||'ORION has no briefing to report yet.');
   await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
   const card=document.createElement('div');card.className='briefing-card';
   const head=document.createElement('div');head.className='briefing-head';
