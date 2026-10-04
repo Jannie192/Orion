@@ -1005,6 +1005,7 @@ async function launchRevenueMission(){
  try{const context=await getReasoningContext();const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title+'\n\n'+objective,context}});if(error||!m?.ok)throw new Error(m?.error||error?.message||'Mission planning failed.');addFeed('ORION','Revenue mission planned. '+(m.steps?.length||0)+' execution steps created.','system');if(m.mission?.id)await runMission(m.mission.id);await loadRevenueEngine();await loadMissions();}catch(e){addFeed('ORION','Revenue mission failed to start: '+e.message,'system');}
 }
 async function handleCommand(v,options={}){
+  if(window.setOrionState)window.setOrionState('thinking');
   await saveMessage('user',v);addFeed('YOU',v,'you');
   const low=v.toLowerCase().replace(/[?!.,]/g,'').trim();
   if(low==='find 10 businesses'||low==='find ten businesses'||low.includes('website prospects')||low.includes('find businesses that need websites')||low==='revenue engine'){await launchRevenueMission();return;}
@@ -1021,27 +1022,27 @@ async function handleCommand(v,options={}){
     const context=withOrionClock(await getReasoningContext());const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title,context}});
     if(error)throw error;
     const mission=m?.mission;
-    const reply='Mission planned: '+(mission?.title||title)+'. ORION created '+(m?.steps?.length||0)+' execution steps and is tracking them now.';await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadMissions();await loadAgentEvents();
+    const reply='Mission planned: '+(mission?.title||title)+'. ORION created '+(m?.steps?.length||0)+' execution steps and is tracking them now.';await saveMessage('assistant',reply);await speakText(reply);addFeed('ORION',reply,'system');await loadMissions();await loadAgentEvents();
     if(mission?.id){await runMission(mission.id);}
   }else if(low.startsWith('project ')){
-    const title=v.slice(8).trim();const {error}=await sb.from('projects').insert({user_id:user.id,name:title,status:'active',description:'Created from ORION command.'});if(error)throw error;const reply='Project created: '+title;await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadProjects();
+    const title=v.slice(8).trim();const {error}=await sb.from('projects').insert({user_id:user.id,name:title,status:'active',description:'Created from ORION command.'});if(error)throw error;const reply='Project created: '+title;await saveMessage('assistant',reply);await speakText(reply);addFeed('ORION',reply,'system');await loadProjects();
   }else
   if(low.startsWith('remember ')){
     const content=v.slice(9).trim();
     const {error}=await sb.from('memories').insert({user_id:user.id,category:'general',content,importance:5,source:'command',metadata:{}});
     if(error)throw error;
     const reply='Memory stored. I will treat this as part of your private ORION context.';
-    await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
+    await saveMessage('assistant',reply);await speakText(reply);addFeed('ORION',reply,'system');
   }else if(low.startsWith('goal ')){
     const title=v.slice(5).trim();
     const {error}=await sb.from('goals').insert({user_id:user.id,title,status:'active'});
     if(error)throw error;
-    const reply='Goal created: '+title;await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
+    const reply='Goal created: '+title;await saveMessage('assistant',reply);await speakText(reply);addFeed('ORION',reply,'system');
   }else if(low.startsWith('task ')){
     const title=v.slice(5).trim();
     const {error}=await sb.from('tasks').insert({user_id:user.id,title,status:'todo',priority:3});
     if(error)throw error;
-    const reply='Task created: '+title;await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
+    const reply='Task created: '+title;await saveMessage('assistant',reply);await speakText(reply);addFeed('ORION',reply,'system');
   }else{
     const context=withOrionClock(await getReasoningContext());
     const {data,error}=await sb.functions.invoke('orion-brain',{body:{
@@ -1050,7 +1051,7 @@ async function handleCommand(v,options={}){
     }});
     if(error||!data?.ok){
       const message=data?.error||error?.message||'The ORION brain could not complete this request.';
-      await saveMessage('assistant',message);addFeed('ORION',message,'system');
+      await saveMessage('assistant',message);addFeed('ORION',message,'system');await speakText(message);
     }else{
       const s=data.synthesis||{};
       const c=data.challenge||{};
@@ -1100,7 +1101,7 @@ async function watchResearchRequest(requestId,command,context,card){
         const s2=brain.synthesis||{},c2=brain.challenge||{};
         const note2=document.createElement('div');note2.className='event-msg';note2.style.marginTop='8px';note2.innerHTML='<strong>Re-evaluated recommendation</strong><br>'+esc(s2.recommendation||'No recommendation generated.')+'<br><span style="color:#708198">Challenge: '+esc(c2.challenge||'No separate challenge generated.')+'</span>';card.appendChild(note2);
         await saveMessage('assistant','Research completed. ORION re-evaluated the recommendation using the new evidence.');
-        window.__orionLatestBriefing='Research completed. ORION re-evaluated the recommendation using new evidence.';
+        window.__orionLatestBriefing='Research completed. ORION re-evaluated the recommendation using new evidence.';await speakText(window.__orionLatestBriefing);
       }
       return;
     }
