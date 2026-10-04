@@ -1070,7 +1070,7 @@ async function handleCommand(v,options={}){
       }
       const confidence=s.confidence==null?'':(' · confidence '+Number(s.confidence).toFixed(0)+'%');
       const reply=(s.title?s.title+': ':'')+rec+(confidence?confidence:'')+(researchNeeded?' · more research required':'');
-      await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
+      await saveMessage('assistant',reply);addFeed('ORION',reply,'system');speakText(reply);
       const card=document.createElement('div');card.className='briefing-card';
       card.innerHTML='<div class="briefing-head"><strong>ORION BRAIN</strong><span class="pill">'+evidenceCount+' evidence records</span></div>'+
         '<div class="event-msg" style="margin-top:7px"><strong>Recommendation</strong><br>'+esc(rec)+'</div>'+
