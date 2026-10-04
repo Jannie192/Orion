@@ -98,6 +98,144 @@
 @keyframes coreRing{to{transform:rotate(360deg)}}
 @keyframes coreRingReverse{to{transform:rotate(-360deg)}}
 @media(max-width:600px){.dashboard-core-mode .shell{padding:0 12px}.dashboard-core-mode .top{top:16px;left:14px;right:14px}.dashboard-core-mode .orion-presence{width:100vw;height:72svh;transform:translateY(-4vh)}.dashboard-core-mode .orion-neural{width:min(82vw,330px);height:min(82vw,330px)}.dashboard-core-mode .command-shell{bottom:24px;width:calc(100vw - 24px)}.dashboard-core-mode .command-shell .btn{padding:0 14px}}
+
+/* ORION cinematic core refinement — restrained, physical, futuristic */
+html,body{background:#05070a}
+body{
+  background:
+    radial-gradient(ellipse at 50% 43%,rgba(28,49,78,.18) 0%,rgba(8,12,18,.10) 28%,transparent 55%),
+    radial-gradient(ellipse at 50% 110%,rgba(20,37,58,.16),transparent 52%),
+    linear-gradient(180deg,#070a0f 0%,#040609 100%);
+  position:relative;
+}
+body:before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.22;
+  background-image:
+    linear-gradient(rgba(130,165,205,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(130,165,205,.045) 1px,transparent 1px);
+  background-size:56px 56px;
+  mask-image:radial-gradient(ellipse at 50% 45%,black 0%,rgba(0,0,0,.7) 38%,transparent 78%);
+  -webkit-mask-image:radial-gradient(ellipse at 50% 45%,black 0%,rgba(0,0,0,.7) 38%,transparent 78%);
+}
+body:after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.42) 100%);
+}
+.dashboard-core-mode .shell{position:relative;z-index:1}
+.dashboard-core-mode .orion-presence{
+  width:min(700px,90vw);height:min(700px,78svh);
+  transform:translateY(-3vh);
+}
+.dashboard-core-mode .orion-presence:before{
+  width:min(560px,72vw);height:min(560px,72vw);
+  background:radial-gradient(circle,rgba(76,137,216,.075) 0%,rgba(40,78,120,.045) 32%,transparent 69%);
+  filter:blur(18px);animation:coreAtmosphere 7s ease-in-out infinite;
+}
+.dashboard-core-mode .orion-presence:after{
+  width:min(500px,66vw);height:min(500px,66vw);
+  border:1px solid rgba(150,184,220,.055);
+  box-shadow:0 0 120px rgba(62,115,180,.055),inset 0 0 90px rgba(62,115,180,.025);
+  animation:presenceDrift 12s ease-in-out infinite;
+}
+.dashboard-core-mode .orion-neural{
+  width:clamp(300px,46vw,430px);height:clamp(300px,46vw,430px);
+  filter:drop-shadow(0 18px 45px rgba(0,0,0,.7)) drop-shadow(0 0 34px rgba(72,130,204,.14));
+  animation:coreFloat 6s ease-in-out infinite;
+}
+.dashboard-core-mode .orion-neural:before{
+  inset:1.5%;border:1px solid rgba(165,197,231,.16);
+  box-shadow:inset 0 0 55px rgba(77,130,190,.055),0 0 40px rgba(70,124,190,.035);
+  animation:orionOrbit 22s linear infinite;
+}
+.dashboard-core-mode .orion-neural:after{
+  inset:8%;border:1px solid rgba(123,166,211,.075);
+  box-shadow:inset 0 0 45px rgba(67,119,177,.035);
+  animation:orionOrbitReverse 31s linear infinite;
+}
+.dashboard-core-mode .neural-ring{
+  inset:4%;border-color:rgba(137,178,218,.055);
+  box-shadow:none;animation-duration:26s;
+}
+.dashboard-core-mode .neural-ring.r2{
+  inset:12%;border-color:rgba(137,178,218,.045);animation-duration:34s;
+}
+.dashboard-core-mode .neural-ring.r3{
+  inset:20%;border-color:rgba(190,215,240,.04);animation-duration:42s;
+}
+.dashboard-core-mode .neural-links{
+  opacity:.13;filter:none;transform:none;
+}
+.dashboard-core-mode .neural-links path{
+  stroke:#9bbde0;stroke-width:.55;stroke-dasharray:1 14;animation-duration:6s;
+}
+.dashboard-core-mode .neural-nodes{opacity:.28}
+.dashboard-core-mode .neural-nodes i{
+  width:2px;height:2px;box-shadow:0 0 6px rgba(139,184,255,.6);
+  animation-duration:5s;opacity:.55;
+}
+.dashboard-core-mode .orion-face{display:none}
+.dashboard-core-mode .neural-core{
+  width:116px;height:116px;
+  border:1px solid rgba(218,234,249,.48);
+  background:
+    radial-gradient(circle at 43% 38%,#ffffff 0 1.5%,rgba(222,238,252,.96) 4%,rgba(144,191,232,.92) 10%,rgba(54,108,164,.82) 22%,rgba(14,29,45,.92) 43%,rgba(4,9,14,.98) 69%,transparent 72%);
+  box-shadow:
+    0 0 18px rgba(196,225,249,.42),
+    0 0 55px rgba(74,135,200,.22),
+    0 0 115px rgba(39,87,139,.12),
+    inset 7px -9px 22px rgba(0,0,0,.72),
+    inset -4px 5px 18px rgba(210,235,255,.16);
+  animation:coreReal 5.5s ease-in-out infinite;
+}
+.dashboard-core-mode .neural-core:before{
+  inset:-7px;border:1px solid rgba(168,205,237,.13);
+  box-shadow:0 0 24px rgba(89,145,202,.1);
+  animation:coreMicroRing 9s linear infinite;
+}
+.dashboard-core-mode .neural-core:after{
+  inset:-20px;border:1px solid rgba(139,184,255,.045);
+  animation:coreMicroRingReverse 15s linear infinite;
+}
+.dashboard-core-mode .command-shell{
+  bottom:clamp(34px,7vh,76px);
+  width:min(720px,calc(100vw - 32px));
+  padding:6px;
+  background:rgba(9,14,21,.54);
+  border:1px solid rgba(157,187,216,.18);
+  border-radius:22px;
+  box-shadow:0 26px 85px rgba(0,0,0,.62),0 0 45px rgba(59,105,157,.07),inset 0 1px 0 rgba(255,255,255,.035);
+  transform:translateX(-50%) translateY(0);
+  transition:transform .45s cubic-bezier(.2,.75,.25,1),box-shadow .45s ease,border-color .45s ease;
+}
+.dashboard-core-mode .command-shell:hover{
+  transform:translateX(-50%) translateY(-7px);
+  border-color:rgba(157,193,225,.30);
+  box-shadow:0 34px 105px rgba(0,0,0,.68),0 0 55px rgba(66,119,178,.10),inset 0 1px 0 rgba(255,255,255,.05);
+}
+.dashboard-core-mode .command-shell:before{
+  opacity:.22;
+  background:linear-gradient(90deg,transparent,rgba(172,211,246,.22),transparent);
+}
+.dashboard-core-mode .command-shell input{
+  padding:17px 18px;font-size:14px;letter-spacing:.01em;
+}
+.dashboard-core-mode .command-shell .btn{
+  height:47px;border-radius:15px;
+  background:linear-gradient(145deg,#172536,#0d1622);
+  border-color:rgba(124,163,202,.25);
+}
+@keyframes coreAtmosphere{0%,100%{transform:scale(.96);opacity:.55}50%{transform:scale(1.04);opacity:.82}}
+@keyframes presenceDrift{0%,100%{transform:scale(.98);opacity:.35}50%{transform:scale(1.015);opacity:.65}}
+@keyframes coreFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes coreReal{0%,100%{transform:translate(-50%,-50%) scale(.985);filter:brightness(.96)}50%{transform:translate(-50%,-50%) scale(1.025);filter:brightness(1.08)}}
+@keyframes coreMicroRing{to{transform:rotate(360deg)}}
+@keyframes coreMicroRingReverse{to{transform:rotate(-360deg)}}
+@media(max-width:600px){
+ .dashboard-core-mode .orion-presence{height:72svh;transform:translateY(-4vh)}
+ .dashboard-core-mode .orion-neural{width:min(84vw,350px);height:min(84vw,350px)}
+ .dashboard-core-mode .neural-core{width:92px;height:92px}
+ .dashboard-core-mode .command-shell{bottom:22px;width:calc(100vw - 22px)}
+}
 </style>
 </head>
 <body>
