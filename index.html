@@ -807,19 +807,26 @@ async function resolveAction(id,status,el){
   el.innerHTML='<div class="action-state">Action '+status+'</div>';
 }
 async function getReasoningContext(){
-  const [mem,goals,tasks,projects,missions,events,runs,capabilities] = await Promise.all([
-    sb.from('memories').select('category,content,importance').order('importance',{ascending:false}).limit(20),
-    sb.from('goals').select('title,description,status,target_date').order('updated_at',{ascending:false}).limit(10),
-    sb.from('tasks').select('title,description,status,priority,due_at').order('updated_at',{ascending:false}).limit(20),
-    sb.from('projects').select('name,description,status').order('updated_at',{ascending:false}).limit(10),
-    sb.from('orion_missions').select('id,title,description,status,priority,progress,objective,updated_at').order('updated_at',{ascending:false}).limit(12),
-    sb.from('agent_events').select('agent_id,mission_id,event_type,title,message,status,created_at').order('created_at',{ascending:false}).limit(20),
-    sb.from('orion_mission_runs').select('mission_id,mission_step_id,status,execution_mode,agent_id,error,started_at,completed_at').order('started_at',{ascending:false}).limit(12),
-    sb.from('orion_capability_requests').select('mission_id,mission_step_id,agent_id,capability,reason,status,metadata,created_at').order('created_at',{ascending:false}).limit(12)
+  const uid=user?.id;
+  if(!uid)return {};
+  const [mem,goals,tasks,projects,missions,events,runs,capabilities,messages,recommendations,challenges] = await Promise.all([
+    sb.from('memories').select('category,content,importance,source,created_at').eq('user_id',uid).order('importance',{ascending:false}).order('updated_at',{ascending:false}).limit(30),
+    sb.from('goals').select('title,description,status,target_date,project_id').eq('user_id',uid).order('updated_at',{ascending:false}).limit(15),
+    sb.from('tasks').select('title,description,status,priority,due_at,project_id,goal_id').eq('user_id',uid).order('updated_at',{ascending:false}).limit(25),
+    sb.from('projects').select('name,description,status,updated_at').eq('user_id',uid).order('updated_at',{ascending:false}).limit(15),
+    sb.from('orion_missions').select('id,title,description,status,priority,progress,objective,updated_at').eq('user_id',uid).order('updated_at',{ascending:false}).limit(15),
+    sb.from('agent_events').select('agent_id,mission_id,event_type,title,message,status,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(25),
+    sb.from('orion_mission_runs').select('mission_id,mission_step_id,status,execution_mode,agent_id,error,started_at,completed_at').eq('user_id',uid).order('started_at',{ascending:false}).limit(15),
+    sb.from('orion_capability_requests').select('mission_id,mission_step_id,agent_id,capability,reason,status,metadata,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(15),
+    sb.from('messages').select('role,content,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(20),
+    sb.from('orion_recommendations').select('title,recommendation,rationale,alternatives,risks,confidence,urgency,status,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(12),
+    sb.from('orion_challenges').select('challenge,counter_evidence,assumptions,risks,confidence,resolution,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(12)
   ]);
   return {
     memories:mem.data||[], goals:goals.data||[], tasks:tasks.data||[], projects:projects.data||[],
-    missions:missions.data||[], agentEvents:events.data||[], missionRuns:runs.data||[], capabilityRequests:capabilities.data||[]
+    missions:missions.data||[], agentEvents:events.data||[], missionRuns:runs.data||[],
+    capabilityRequests:capabilities.data||[], recentMessages:(messages.data||[]).reverse(),
+    recentRecommendations:recommendations.data||[], recentChallenges:challenges.data||[]
   };
 }
 async function requestBriefing({speak=true,since}={}){
