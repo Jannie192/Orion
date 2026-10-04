@@ -994,7 +994,7 @@ function setupVoice(){
     if(!spoken)return;
     orionVoiceBusy=true;
     stopOrionListening();
-    $('command').value=spoken;
+    if(!orionVoiceMode)$('command').value=spoken;
     if(window.setOrionState)window.setOrionState('thinking');
     try{
       await handleCommand(spoken);
