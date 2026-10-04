@@ -947,7 +947,7 @@ async function researchBriefing(query=''){
 async function launchRevenueMission(){
  if(!user)return;const title='Revenue Engine — Find 10 Website Prospects';
  const objective='Find 10 real local businesses that appear to need a professional website. Discover and qualify each prospect using verifiable evidence, record the business and website details in the ORION lead pipeline, prioritize the strongest opportunities, and prepare approval-gated outreach. Never invent businesses, contacts, evidence, outreach, clients, payments, or revenue.';
- try{const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title+'\n\n'+objective}});if(error||!m?.ok)throw new Error(m?.error||error?.message||'Mission planning failed.');addFeed('ORION','Revenue mission planned. '+(m.steps?.length||0)+' execution steps created.','system');if(m.mission?.id)await runMission(m.mission.id);await loadRevenueEngine();await loadMissions();}catch(e){addFeed('ORION','Revenue mission failed to start: '+e.message,'system');}
+ try{const context=await getReasoningContext();const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title+'\n\n'+objective,context}});if(error||!m?.ok)throw new Error(m?.error||error?.message||'Mission planning failed.');addFeed('ORION','Revenue mission planned. '+(m.steps?.length||0)+' execution steps created.','system');if(m.mission?.id)await runMission(m.mission.id);await loadRevenueEngine();await loadMissions();}catch(e){addFeed('ORION','Revenue mission failed to start: '+e.message,'system');}
 }
 async function handleCommand(v,options={}){
   await saveMessage('user',v);addFeed('YOU',v,'you');
@@ -963,7 +963,7 @@ async function handleCommand(v,options={}){
   }
   if(low.startsWith('mission ')){
     const title=v.slice(8).trim();
-    const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title}});
+    const context=await getReasoningContext();const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title,context}});
     if(error)throw error;
     const mission=m?.mission;
     const reply='Mission planned: '+(mission?.title||title)+'. ORION created '+(m?.steps?.length||0)+' execution steps and is tracking them now.';await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadMissions();await loadAgentEvents();
