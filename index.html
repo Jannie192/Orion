@@ -1153,6 +1153,30 @@ async function handleCommand(v,options={}){
     const reply='Task created: '+title;await saveMessage('assistant',reply);await speakText(reply);addFeed('ORION',reply,'system');
   }else{
     const context=withOrionClock(await getReasoningContext());
+    const decisionIntent=/\\b(should i|should we|which should|which one|what should i|what's better|whats better|is it better|recommend|recommendation|best option|best approach|worth it|is this a good idea|do you think i should|compare|choose between|help me decide|make a decision|what would you do|pros and cons|risk|risks)\\b/i.test(v);
+    if(decisionIntent&&!options.decisionPass){
+      try{
+        const {data:decision,error:decisionError}=await sb.functions.invoke('orion-decision',{body:{command:v,context}});
+        if(!decisionError&&decision?.ok&&decision?.result){
+          const d=decision.result;
+          const verdict=String(d.decision||'Decision');
+          const recommendation=String(d.recommendation||'No recommendation generated.');
+          const confidence=d.confidence==null?'':(' · confidence '+Number(d.confidence).toFixed(0)+'%');
+          const reply=verdict+': '+recommendation+confidence+(d.research_needed?' · I need more evidence before treating this as final':'');
+          await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await speakText(reply);
+          const card=document.createElement('div');card.className='briefing-card';
+          card.innerHTML='<div class="briefing-head"><strong>ORION DECISION</strong><span class="pill">'+(d.research_needed?'RESEARCH NEEDED':'RECOMMENDATION')+'</span></div>'+
+            '<div class="event-msg" style="margin-top:7px"><strong>Verdict</strong><br>'+esc(verdict)+'</div>'+
+            '<div class="event-msg" style="margin-top:8px"><strong>Recommendation</strong><br>'+esc(recommendation)+'</div>'+
+            '<div class="event-msg" style="margin-top:8px"><strong>Why</strong><br>'+esc(d.rationale||'Context, prior decisions, lessons and available evidence were considered.')+'</div>'+
+            (Array.isArray(d.risks)&&d.risks.length?'<div class="event-msg" style="margin-top:8px"><strong>Risks</strong><br>'+esc(d.risks.join(' · '))+'</div>':'')+
+            (d.what_would_change_my_mind?'<div class="event-msg" style="margin-top:8px"><strong>What would change my mind</strong><br>'+esc(d.what_would_change_my_mind)+'</div>':'')+
+            '<div class="event-msg" style="margin-top:8px;color:#708198">Confidence: '+(d.confidence==null?'—':Number(d.confidence).toFixed(0)+'%')+(d.next_action?' · Next: '+esc(d.next_action):'')+'</div>';
+          $('feed').prepend(card);
+          return;
+        }
+      }catch(e){console.warn('ORION decision layer unavailable; falling back to brain.',e)}
+    }
     context.activeConversation={...(context.activeConversation||{}),currentUserMessage:v,instruction:'Resolve this message against the recent conversation. Treat follow-ups, corrections, shorthand, pronouns, quantities and location changes as refinements of the previous request when context supports that. Do not make the user repeat information already known.'};
     const {data,error}=await sb.functions.invoke('orion-brain',{body:{
       command:v,
@@ -1198,195 +1222,3 @@ async function handleCommand(v,options={}){
 }
 async function watchResearchRequest(requestId,command,context,card){
   if(!requestId)return;
-  let attempts=0;
-  const poll=async()=>{
-    attempts++;
-    const {data:rq,error}=await sb.from('orion_brain_research_requests').select('id,status,result_research_id').eq('id',requestId).eq('user_id',user.id).maybeSingle();
-    if(error||!rq)return;
-    if(rq.status==='completed'){
-      const note=document.createElement('div');note.className='event-msg';note.style.marginTop='8px';note.innerHTML='<strong>Research complete</strong><br>ORION found new evidence and is re-evaluating the recommendation.';card.appendChild(note);
-      const {data:brain,error:brainError}=await sb.functions.invoke('orion-brain',{body:{command,context}});
-      if(!brainError&&brain?.ok){
-        const s2=brain.synthesis||{},c2=brain.challenge||{};
-        const note2=document.createElement('div');note2.className='event-msg';note2.style.marginTop='8px';note2.innerHTML='<strong>Re-evaluated recommendation</strong><br>'+esc(s2.recommendation||'No recommendation generated.')+'<br><span style="color:#708198">Challenge: '+esc(c2.challenge||'No separate challenge generated.')+'</span>';card.appendChild(note2);
-        await saveMessage('assistant','Research completed. ORION re-evaluated the recommendation using the new evidence.');
-        window.__orionLatestBriefing='Research completed. ORION re-evaluated the recommendation using new evidence.';await speakText(window.__orionLatestBriefing);
-      }
-      return;
-    }
-    if(rq.status==='failed'||attempts>=36)return;
-    setTimeout(poll,5000);
-  };
-  setTimeout(poll,5000);
-}
-async function requestPasswordReset(){
- const email=($('resetEmail').value.trim()||$('email').value.trim());
- $('authmsg').className='error';
- if(!email){$('authmsg').textContent='Enter your email address.';return}
- $('sendReset').disabled=true;$('sendReset').textContent='Sending…';$('authmsg').textContent='';
- try{
-  const redirectTo=window.location.origin+window.location.pathname;
-  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
-  if(error)throw error;
-  $('authmsg').className='ok';
-  $('authmsg').textContent='If an account exists for that email, a password reset link has been sent. Check your inbox.';
- }catch(error){$('authmsg').textContent=error?.message||'Could not send the reset email.'}
- finally{$('sendReset').disabled=false;$('sendReset').textContent='Send reset link'}
-}
-async function completePasswordReset(){
- const password=$('newPassword').value;
- const confirm=$('confirmPassword').value;
- $('authmsg').className='error';
- if(!password||password.length<6){$('authmsg').textContent='New password must be at least 6 characters.';return}
- if(password!==confirm){$('authmsg').textContent='The passwords do not match.';return}
- $('updatePassword').disabled=true;$('updatePassword').textContent='Updating…';
- try{
-  const {error}=await sb.auth.updateUser({password});
-  if(error)throw error;
-  $('authmsg').className='ok';$('authmsg').textContent='Password updated successfully. Loading ORION…';
-  $('resetPanel').classList.add('hidden');
-  $('login').classList.remove('hidden');
-  await sb.auth.signOut();
- }catch(error){$('authmsg').textContent=error?.message||'Could not update your password.'}
- finally{$('updatePassword').disabled=false;$('updatePassword').textContent='Set new password'}
-}
-function showPasswordRecovery(){
- $('login').classList.remove('hidden');
- $('signin').classList.add('hidden');$('signup').classList.add('hidden');$('forgotPassword').classList.add('hidden');
- $('email').classList.add('hidden');$('password').classList.add('hidden');
- $('resetPanel').classList.remove('hidden');
- $('resetPanel').innerHTML='<h3>Choose a new ORION password</h3><p>Your reset link is valid. Choose a new password below.</p><input id="newPassword" type="password" placeholder="New password" autocomplete="new-password"><input id="confirmPassword" type="password" placeholder="Confirm new password" autocomplete="new-password"><button class="btn" id="updatePassword" type="button">Set new password</button>';
- $('authmsg').className='ok';$('authmsg').textContent='Password reset link verified.';
- $('updatePassword').onclick=completePasswordReset;
-}
-async function signUp(){
- if(authBusy)return;
- const email=$('email').value.trim(),password=$('password').value;
- $('authmsg').className='error';
- if(!email||!password){$('authmsg').textContent='Enter an email and password.';return}
- if(password.length<6){$('authmsg').textContent='Password must be at least 6 characters.';return}
- authBusy=true;$('signup').disabled=true;$('signup').textContent='Creating…';$('authmsg').textContent='';
- try{
-  const {data,error}=await sb.auth.signUp({email,password});
-  if(error)throw error;
-  $('authmsg').className='ok';$('authmsg').textContent=data.session?'Account created and signed in.':'Account created. Check your email if confirmation is enabled.';
-  if(data.session)await showApp(data.user);
- }catch(error){$('authmsg').textContent=error?.message||'Account creation failed.'}
- finally{authBusy=false;$('signup').disabled=false;$('signup').textContent='Create account'}
-}
-$('signin').addEventListener('click',()=>window.__orionSignIn());$('signup').addEventListener('click',signUp);$('forgotPassword').onclick=()=>{$('resetPanel').classList.toggle('hidden');if(!$('resetPanel').classList.contains('hidden'))$('resetEmail').focus()};$('sendReset').onclick=requestPasswordReset;
-$('addGitHub').onclick=()=>{$('githubModal').classList.remove('hidden')};
-$('closeGitHub').onclick=$('cancelGitHub').onclick=()=>{$('githubModal').classList.add('hidden')};
-$('saveGitHub').onclick=async()=>{
- const token=$('githubToken').value.trim(),name=$('githubName').value.trim()||'GitHub',repo=$('githubRepo').value.trim();
- if(!token){$('githubMsg').textContent='GitHub token is required.';return}
- $('saveGitHub').disabled=true;$('githubMsg').className='ok';$('githubMsg').textContent='Verifying GitHub…';
- try{
-  const {data,error}=await sb.functions.invoke('orion-connect',{body:{operation:'save_github',token,name,repo}});
-  if(error||!data?.ok) throw new Error(data?.error||error?.message||'Connection failed.');
-  $('githubToken').value='';$('githubModal').classList.add('hidden');$('githubMsg').textContent='';
-  await loadTools();await loadConnections();await ensureAgentTools();addFeed('ORION','GitHub connected as @'+data.account.login+'.','system');
- }catch(e){$('githubMsg').className='error';$('githubMsg').textContent=e.message}finally{$('saveGitHub').disabled=false}
-};
-async function connectTool(toolId){
- $('genericToolId').value=toolId;$('genericToolModal').classList.remove('hidden');
-}
-window.connectTool=connectTool;
-async function discoverMcp(){
- const mcpTools=[]; const {data,error}=await sb.from('tools').select('id,name,execution_mode,enabled').eq('user_id',user.id).eq('execution_mode','mcp_bridge').eq('enabled',true);
- if(error||!data?.length){addFeed('ORION','No enabled MCP bridge is available to discover.','system');return}
- for(const t of data){const {data:r,error:e}=await sb.functions.invoke('orion-mcp-discover',{body:{toolId:t.id}});if(e||!r?.ok){addFeed('ORION','MCP discovery failed for '+t.name+': '+(r?.error||e?.message||'Unknown error'),'system');continue}mcpTools.push(r);addFeed('ORION','Discovered '+r.discovered+' capabilities from '+t.name+'.','system')}
- await loadTools(); await loadMcpActions();
-}
-async function loadCapabilityRequests(){const box=document.getElementById('capabilityRequests');if(!box||!user)return;const {data,error}=await sb.from('orion_capability_requests').select('id,mission_id,mission_step_id,agent_id,request_type,capability,reason,status,selected_tool_action_id,auto_granted,metadata,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(30);if(error){box.innerHTML='<div class="connection-meta">Could not load capability requests.</div>';return}if(!data?.length){box.innerHTML='<div class="empty-state">No capability requests. ORION is fully equipped for the work currently requested.</div>';return}box.innerHTML=data.map(r=>{const state=r.status==='fulfilled'?'FULFILLED':r.status==='pending'?'WAITING':'FAILED';const classification=r.metadata?.classification||'capability';const action=r.metadata?.decision?.tool_action_slug||'';return '<div class="tool"><div class="tool-head"><strong>'+esc(r.capability)+'</strong><span class="pill">'+state+'</span></div><div class="tool-meta">'+esc(classification)+' · '+esc(r.reason||'Agent requested this capability.')+(action?' · '+esc(action):'')+'</div><div class="tool-actions">'+(r.status==='pending'&&r.mission_id?'<button data-cap-run="'+esc(r.mission_id)+'">Retry mission</button>':'')+(r.auto_granted?'<span class="pill">auto-granted</span>':'')+'</div></div>'}).join('');box.querySelectorAll('[data-cap-run]').forEach(b=>b.onclick=async()=>{await runMission(b.dataset.capRun);await loadCapabilityRequests();await loadMissions();await loadAgentEvents()})}
-async function loadMcpActions(){const {data}=await sb.from('tool_actions').select('id,name,slug,description,risk_level,requires_approval,enabled,tool_id').eq('user_id',user.id).order('name');const box=document.getElementById('mcpActions');if(!box)return;box.innerHTML=(data||[]).map(a=>'<div class="tool"><div class="tool-head"><strong>'+esc(a.name)+'</strong><span class="pill">'+(a.enabled?'READY':'DISABLED')+'</span></div><div class="tool-meta">'+esc(a.description||'MCP capability')+' · '+esc(a.risk_level)+' · '+(a.requires_approval?'approval required':'no approval')+'</div><div class="tool-actions"><button data-mcp-toggle="'+esc(a.id)+'">'+(a.enabled?'Disable':'Enable')+'</button><button data-mcp-assign="'+esc(a.id)+'">Assign to agent</button></div></div>').join('')||'<div class="connection-meta">No discovered MCP actions yet.</div>';box.querySelectorAll('[data-mcp-toggle]').forEach(b=>b.onclick=()=>toggleAction(b.dataset.mcpToggle,!b.textContent.includes('Disable')));box.querySelectorAll('[data-mcp-assign]').forEach(b=>b.onclick=()=>assignAction(b.dataset.mcpAssign));}
-async function toggleAction(id,enabled){await sb.from('tool_actions').update({enabled,updated_at:new Date().toISOString()}).eq('id',id).eq('user_id',user.id);await loadMcpActions()}
-async function assignAction(id){const {data:a}=await sb.from('tool_actions').select('id,name,tool_id').eq('id',id).eq('user_id',user.id).single();if(!a)return;const {data:agents}=await sb.from('agents').select('id,name,slug').eq('user_id',user.id).eq('enabled',true).order('name');if(!agents?.length){addFeed('ORION','No enabled agents are available for assignment.','system');return}const choices=agents.map((x,i)=>(i+1)+'. '+x.name+' ('+x.slug+')').join('\n');const answer=prompt('Assign '+a.name+' to agent(s). Enter numbers separated by commas:\n\n'+choices);if(!answer)return;const indexes=answer.split(',').map(x=>Number(x.trim())-1).filter(x=>Number.isInteger(x)&&x>=0&&x<agents.length);let assigned=[];for(const i of indexes){const agent=agents[i];const {data:binding}=await sb.from('agent_tools').select('id').eq('user_id',user.id).eq('agent_id',agent.id).eq('tool_id',a.tool_id).maybeSingle();if(!binding)await sb.from('agent_tools').insert({user_id:user.id,agent_id:agent.id,tool_id:a.tool_id,enabled:true});const {error}=await sb.from('agent_tool_actions').upsert({user_id:user.id,agent_id:agent.id,tool_action_id:a.id,enabled:true},{onConflict:'user_id,agent_id,tool_action_id'});if(!error)assigned.push(agent.name)}addFeed('ORION','Assigned '+a.name+' to '+assigned.join(', ')+'.','system');}
-window.assignAction=assignAction;window.toggleAction=toggleAction;
-$('discoverMcp').onclick=discoverMcp;
-const toolModeEl=$('toolMode');const toolPathLabel=$('toolActionPath').previousElementSibling;const toolBaseLabel=$('toolBaseUrl').previousElementSibling;function refreshToolMode(){const m=toolModeEl.value;const mcp=m==='mcp_bridge';toolPathLabel.textContent=mcp?'MCP tool name':'Action path';$('toolActionPath').placeholder=mcp?'lookup_order':'/v1/status';toolBaseLabel.textContent=mcp?'MCP server URL (HTTPS)':'Base URL (HTTPS)';$('toolActionMethod').disabled=mcp;if(mcp)$('toolActionMethod').value='POST';if(mcp)$('toolConnection').value='true'}toolModeEl.addEventListener('change',refreshToolMode);refreshToolMode();
-$('addTool').onclick=()=>{$('toolModal').classList.remove('hidden')};$('closeTool').onclick=$('cancelTool').onclick=()=>{$('toolModal').classList.add('hidden')};$('saveTool').onclick=async()=>{const name=$('toolName').value.trim(),slug=$('toolSlug').value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'-'),mode=$('toolMode').value,requires=$('toolConnection').value==='true',baseUrl=$('toolBaseUrl').value.trim(),actionSlug=$('toolActionSlug').value.trim().toLowerCase().replace(/[^a-z0-9_-]+/g,'-'),actionMethod=$('toolActionMethod').value,actionPath=$('toolActionPath').value.trim();if(!name||!slug){$('toolFormMsg').textContent='Name and slug are required.';return}if(['http','oauth_api','webhook','mcp_bridge','custom'].includes(mode)&&(!baseUrl||!actionSlug||!actionPath)){$('toolFormMsg').textContent='Connected tools need a base URL, action slug and action path.';return}const {data:tool,error}=await sb.from('tools').insert({user_id:user.id,name,slug,description:$('toolDescription').value.trim(),enabled:true,adapter_type:slug,execution_mode:mode,risk_level:$('toolRisk').value,requires_connection:requires,connection_type:$('toolAuth').value,config:{status:'registered',base_url:baseUrl||null},input_schema:{type:'object'},output_schema:{type:'object'},version:1}).select('id').single();if(error){$('toolFormMsg').textContent=error.message;return}if(['http','oauth_api','webhook','mcp_bridge','custom'].includes(mode)){const {error:ae}=await sb.from('tool_actions').insert({user_id:user.id,tool_id:tool.id,name:actionSlug,slug:actionSlug,description:$('toolDescription').value.trim(),method:actionMethod,path_template:actionPath,input_schema:{type:'object'},output_schema:{type:'object'},risk_level:$('toolRisk').value,requires_approval:$('toolRisk').value!=='low',enabled:true});if(ae){await sb.from('tools').delete().eq('id',tool.id).eq('user_id',user.id);$('toolFormMsg').textContent=ae.message;return}}$('toolModal').classList.add('hidden');await loadTools();addFeed('ORION','Tool registered: '+name+'.','system')};
-$('closeGeneric').onclick=$('cancelGeneric').onclick=()=>{$('genericToolModal').classList.add('hidden')};$('saveGeneric').onclick=async()=>{const toolId=$('genericToolId').value,name=$('genericName').value.trim()||'Default',authType=$('genericAuth').value,baseUrl=$('genericBaseUrl').value.trim(),secret=$('genericSecret').value,authHeader=$('genericAuthHeader').value.trim()||'X-API-Key';if(!baseUrl){$('genericMsg').textContent='Base URL is required.';return}const {data,error}=await sb.functions.invoke('orion-connect',{body:{operation:'save_adapter',toolId,name,baseUrl,authType,secret,authHeader}});if(error||!data?.ok){$('genericMsg').textContent=data?.error||error?.message||'Connection failed.';return}$('genericSecret').value='';$('genericToolModal').classList.add('hidden');await loadConnections();addFeed('ORION','Adapter connection established.','system')};$('logout').onclick=async()=>{await sb.auth.signOut();showLogin()}
-$('run').onclick=async()=>{const v=$('command').value.trim();if(!v)return;$('run').disabled=true;try{await handleCommand(v);$('command').value=''}catch(e){addFeed('ORION','Command failed: '+e.message,'system')}finally{$('run').disabled=false}}
-$('command').addEventListener('keydown',e=>{if(e.key==='Enter')$('run').click()});
-$('voiceListen').onclick=()=>{
-  if(!orionRecognition){setupVoice();if(!orionRecognition)return}
-  orionVoiceMode=!orionVoiceMode;
-  if(orionVoiceMode){
-    setVoiceStatus('MIC STARTING…');
-    $('voicePrompt')&&($('voicePrompt').textContent='LISTENING');
-    $('voiceListen')?.classList.add('listening');
-    try{startOrionListening()}catch(e){setVoiceStatus('TAP AGAIN TO ALLOW MIC')}
-    if(window.setOrionState)window.setOrionState('listening');
-  }else{
-    stopOrionListening();
-    $('voiceListen')?.classList.remove('listening');
-    $('voicePrompt')&&($('voicePrompt').textContent='TAP TO TALK');
-    setVoiceStatus('VOICE READY');
-    if(window.setOrionState)window.setOrionState('idle');
-  }
-};
-$('voiceSpeak').onclick=()=>speakText(window.__orionLatestBriefing||'ORION voice is online. Ask me what is happening.');
-document.getElementById('activateVoice')?.addEventListener('click',activateOrionVoice);
-document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>{$('command').value=b.dataset.cmd;$('command').focus()});
-function initializeAuth(){ $('authmsg').textContent='Checking ORION session…'; }
-window.__ORION_MAIN_READY=true;
-void initializeAuth();
-</script><script type="module">
-window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let activePlayer=null;
-  window.__orionStopSpeaking=()=>{
-    try{
-      if(activePlayer){activePlayer.pause();activePlayer.currentTime=0;activePlayer=null;}
-    }catch{}
-    try{window.speechSynthesis?.cancel()}catch{}
-    window.__orionVoiceSpeaking=false;
-    if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'LISTENING…':'VOICE READY';
-  };
-  const load=async()=>{
-    if(ttsPromise)return ttsPromise;
-    ttsPromise=(async()=>{
-      const {KokoroTTS}=await import('https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js');
-      const hasGPU=!!navigator.gpu;
-      return await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{
-        dtype:hasGPU?'fp32':'q8',
-        device:hasGPU?'webgpu':'wasm',
-        progress_callback:p=>{
-          if($('voiceStatus')&&p?.status==='progress')$('voiceStatus').textContent='ORION VOICE '+Math.round(p.progress||0)+'%';
-        }
-      });
-    })().catch(e=>{ttsPromise=null;throw e});
-    return ttsPromise;
-  };
-  return async(text)=>{
-    const tts=await load();
-    const audio=await tts.generate(text,{voice:'bm_george',speed:.96});
-    const blob=audio.toBlob();
-    if(currentUrl)URL.revokeObjectURL(currentUrl);
-    currentUrl=URL.createObjectURL(blob);
-    const player=new Audio(currentUrl);
-    activePlayer=player;
-    player.volume=1;
-    if($('voiceStatus'))$('voiceStatus').textContent='ORION SPEAKING';if(window.setOrionState)window.setOrionState('speaking');
-    player.onended=()=>{if(activePlayer===player)activePlayer=null;if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY';if(window.setOrionState)window.setOrionState('idle')};
-    player.onpause=()=>{if(activePlayer===player&&player.ended===false){if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'LISTENING…':'VOICE READY';if(window.setOrionState)window.setOrionState('idle')}};
-    await player.play();
-    if(orionVoiceMode&&!orionVoiceBusy)setTimeout(startOrionListening,160);
-  };
-})();
-</script>
-<script>
-(function(){
- const presence=document.getElementById('orionPresence'), state=document.getElementById('orionState'); if(!presence)return;
- const labels={idle:'ONLINE · IDLE',listening:'LISTENING',thinking:'THINKING',researching:'RESEARCHING',speaking:'ORION SPEAKING',executing:'EXECUTING'};
- window.setOrionState=function(next,duration){presence.dataset.state=next;state.textContent=labels[next]||String(next).toUpperCase();if(duration)setTimeout(()=>window.setOrionState('idle'),duration)};
- const command=document.getElementById('command'),run=document.getElementById('run'),listen=document.getElementById('voiceListen'),speak=document.getElementById('voiceSpeak');
- command&&command.addEventListener('input',()=>window.setOrionState(command.value.trim()?'listening':'idle'));
- run&&run.addEventListener('click',()=>{window.setOrionState('thinking');setTimeout(()=>{if(command&&/research|latest|current|find|search|compare/i.test(command.value))window.setOrionState('researching')},700)});
- listen&&listen.addEventListener('click',()=>window.setOrionState('listening'));
- speak&&speak.addEventListener('click',()=>{window.setOrionState('speaking');setTimeout(()=>window.setOrionState('idle'),12000)});
- const feed=document.getElementById('feed'); if(feed){new MutationObserver(muts=>{if(muts.some(m=>Array.from(m.addedNodes).some(n=>n.nodeType===1&&(n.classList.contains('msg')||n.classList.contains('briefing-card'))))){window.setOrionState('speaking');setTimeout(()=>window.setOrionState('idle'),5000)}}).observe(feed,{childList:true});}
-})();
-</script>
-
-</body>
-</html>
