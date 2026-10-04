@@ -38,7 +38,7 @@
 .layout{gap:12px}
 .section{margin-top:13px}
 
-.voice-controls{display:flex;gap:7px;align-items:center;margin-top:8px}.voice-btn{width:42px;height:42px;border:1px solid #1b2b3e;border-radius:11px;background:#0b121c;color:#dcecff;cursor:pointer;font-size:17px}.voice-btn:hover{border-color:#2d4967;background:#0e1722}.voice-btn.listening{border-color:#6f9cff;box-shadow:0 0 0 3px rgba(111,156,255,.12)}.voice-status{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#65758b}.briefing-card{margin-top:10px;border:1px solid #1b2b3e;border-radius:12px;background:#0a111a;padding:11px}.briefing-card .briefing-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.briefing-card button{border:1px solid #1b2b3e;background:#0e1722;color:#dcecff;border-radius:8px;padding:6px 9px;cursor:pointer;font-size:10px}
+.voice-controls{display:flex;gap:10px;align-items:center;margin-top:12px}.voice-first{min-height:56px}.voice-btn{width:46px;height:46px;border:1px solid #1b2b3e;border-radius:14px;background:#0b121c;color:#dcecff;cursor:pointer;font-size:18px;transition:.2s}.voice-btn:hover{border-color:#2d4967;background:#0e1722;transform:translateY(-1px)}.voice-btn.listening{border-color:#8bb8ff;box-shadow:0 0 0 4px rgba(111,156,255,.13),0 0 22px rgba(111,156,255,.12);animation:voicePulse 1.4s ease-in-out infinite}.voice-main{width:56px;height:56px;border-radius:18px;font-size:23px}.voice-secondary{width:38px;height:38px;font-size:15px;margin-left:auto}.voice-copy{display:flex;flex-direction:column;gap:2px}.voice-copy strong{font-size:10px;letter-spacing:.14em;color:#dcecff}.voice-status{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#65758b}@keyframes voicePulse{50%{box-shadow:0 0 0 8px rgba(111,156,255,.05),0 0 28px rgba(111,156,255,.2)}}.briefing-card{margin-top:10px;border:1px solid #1b2b3e;border-radius:12px;background:#0a111a;padding:11px}.briefing-card .briefing-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.briefing-card button{border:1px solid #1b2b3e;background:#0e1722;color:#dcecff;border-radius:8px;padding:6px 9px;cursor:pointer;font-size:10px}
 
 /* Revenue Engine */
 .revenue-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}.revenue-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.revenue-kpi{padding:12px;border:1px solid var(--line);border-radius:13px;background:#0a1018}.revenue-kpi .num{font-size:20px;font-weight:800;margin-top:3px}.revenue-list{display:grid;gap:8px;margin-top:10px}.lead-row{padding:11px;border:1px solid var(--line);border-radius:12px;background:#0a1018}.lead-row .lead-head{display:flex;justify-content:space-between;gap:10px}.lead-row .lead-meta{font-size:10px;color:var(--muted);margin-top:3px}.lead-row .lead-note{font-size:11px;color:#b8c4d4;margin-top:6px}.stage{font-size:9px;text-transform:uppercase;letter-spacing:.08em;border:1px solid #304763;border-radius:99px;padding:3px 7px;color:#a9c1df}.revenue-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}.revenue-actions .btn{height:38px;font-size:10px}.money-positive{color:var(--good)}.money-negative{color:var(--danger)}@media(max-width:760px){.revenue-grid{grid-template-columns:1fr}.revenue-kpis{grid-template-columns:repeat(2,1fr)}}
@@ -582,7 +582,11 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
   <div class="orion-state" id="orionState">ONLINE · IDLE</div>
 </div>
 <div class="command command-shell"><input id="command" placeholder="Talk to ORION..."><button class="btn" id="run">Execute</button></div>
-<div class="voice-controls"><button class="voice-btn" id="voiceListen" title="Toggle hands-free voice mode" aria-label="Toggle hands-free voice mode">🎙</button><button class="voice-btn" id="voiceSpeak" title="Speak latest ORION response" aria-label="Speak latest ORION response">🔊</button><span class="voice-status" id="voiceStatus">VOICE READY</span></div>
+<div class="voice-controls voice-first">
+  <button class="voice-btn voice-main" id="voiceListen" title="Start talking to ORION" aria-label="Start talking to ORION">🎙</button>
+  <div class="voice-copy"><strong id="voicePrompt">TAP TO TALK</strong><span id="voiceStatus">VOICE READY</span></div>
+  <button class="voice-btn voice-secondary" id="voiceSpeak" title="Repeat latest ORION response" aria-label="Repeat latest ORION response">🔊</button>
+</div>
 <div class="command-hint"><span>Ask</span><span>What's happening?</span><span>Plan a mission</span><span>Remember</span><span>Check progress</span></div></section>
 
 <div class="system-strip">
@@ -670,7 +674,7 @@ async function showApp(u){
  const previousSeen=localStorage.getItem('orion_last_seen_at');
  $('login').classList.add('hidden');$('app').classList.remove('hidden');
  const clock=getOrionClockContext();$('greeting').textContent=clock.greeting;
- if(!booting){booting=true;try{await boot();await requestBriefing({speak:true,since:previousSeen||new Date(Date.now()-24*60*60*1000).toISOString()})}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
+ if(!booting){booting=true;try{await boot();const welcome=clock.greeting+' I’m ORION. I’m online and ready for you.';window.__orionLatestBriefing=welcome;addFeed('ORION',welcome,'system');try{await speakText(welcome)}catch(e){setVoiceStatus('TAP MIC TO START VOICE')}}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
 }
 function showLogin(){if(authBusy)return;$('app').classList.add('hidden');$('login').classList.remove('hidden');user=null;conversationId=null}
 function addFeed(role,content,kind=''){const el=document.createElement('div');el.className='msg '+kind;el.innerHTML='<div class="meta">'+esc(role)+'</div>'+esc(content).replace(/\n/g,'<br>');$('feed').prepend(el)}
@@ -952,6 +956,7 @@ let orionVoiceMode=false;
 let orionVoiceBusy=false;
 function setVoiceStatus(label){
   if($('voiceStatus'))$('voiceStatus').textContent=label;
+  if($('voicePrompt')&&!orionVoiceMode)$('voicePrompt').textContent=label.includes('UNAVAILABLE')?'VOICE UNAVAILABLE':'TAP TO TALK';
 }
 function stopOrionListening(){
   if(!orionRecognition)return;
@@ -1282,12 +1287,15 @@ $('voiceListen').onclick=()=>{
   if(!orionRecognition){setupVoice();if(!orionRecognition)return}
   orionVoiceMode=!orionVoiceMode;
   if(orionVoiceMode){
-    setVoiceStatus('VOICE MODE STARTING…');
+    setVoiceStatus('MIC STARTING…');
+    $('voicePrompt')&&($('voicePrompt').textContent='LISTENING');
     $('voiceListen')?.classList.add('listening');
-    startOrionListening();
+    try{startOrionListening()}catch(e){setVoiceStatus('TAP AGAIN TO ALLOW MIC')}
+    if(window.setOrionState)window.setOrionState('listening');
   }else{
     stopOrionListening();
     $('voiceListen')?.classList.remove('listening');
+    $('voicePrompt')&&($('voicePrompt').textContent='TAP TO TALK');
     setVoiceStatus('VOICE READY');
     if(window.setOrionState)window.setOrionState('idle');
   }
