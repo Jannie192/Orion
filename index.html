@@ -663,7 +663,7 @@ async function showApp(u){
  user=u;
  const previousSeen=localStorage.getItem('orion_last_seen_at');
  $('login').classList.add('hidden');$('app').classList.remove('hidden');
- $('greeting').textContent='Good to see you.';
+ $('greeting').textContent='Good morning, sir.';
  if(!booting){booting=true;try{await boot();await requestBriefing({speak:false,since:previousSeen||new Date(Date.now()-24*60*60*1000).toISOString()})}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
 }
 function showLogin(){if(authBusy)return;$('app').classList.add('hidden');$('login').classList.remove('hidden');user=null;conversationId=null}
