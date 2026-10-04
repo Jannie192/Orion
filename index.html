@@ -236,6 +236,135 @@ body:after{
  .dashboard-core-mode .neural-core{width:92px;height:92px}
  .dashboard-core-mode .command-shell{bottom:22px;width:calc(100vw - 22px)}
 }
+
+/* ORION holographic intelligence sphere — inspired by cinematic holographic interfaces */
+.dashboard-core-mode .orion-neural{
+  overflow:visible;
+  background:
+    radial-gradient(circle at 50% 50%,rgba(214,238,255,.10) 0 4%,transparent 13%),
+    radial-gradient(circle at 50% 50%,rgba(64,133,204,.10) 0 24%,rgba(18,38,61,.06) 42%,transparent 69%),
+    conic-gradient(from 15deg,transparent 0 8%,rgba(109,169,225,.09) 10%,transparent 15% 27%,rgba(142,196,239,.07) 29%,transparent 35% 52%,rgba(74,143,211,.08) 54%,transparent 62% 78%,rgba(153,205,243,.06) 80%,transparent 86%);
+  border-radius:50%;
+}
+.dashboard-core-mode .orion-neural:before{
+  inset:2%;
+  border:1px solid rgba(173,210,239,.12);
+  border-top-color:rgba(184,222,250,.28);
+  border-bottom-color:rgba(91,153,211,.18);
+  box-shadow:
+    inset 0 0 65px rgba(64,126,190,.055),
+    0 0 55px rgba(65,126,190,.045);
+  animation:orionSphereTurn 24s linear infinite;
+}
+.dashboard-core-mode .orion-neural:after{
+  inset:5%;
+  border:1px solid rgba(119,174,219,.07);
+  border-left-color:rgba(172,215,245,.16);
+  border-right-color:rgba(80,139,194,.13);
+  box-shadow:inset 0 0 45px rgba(66,128,188,.035);
+  animation:orionSphereTurnReverse 17s linear infinite;
+}
+.dashboard-core-mode .neural-links{
+  opacity:.25;
+  mix-blend-mode:screen;
+  filter:drop-shadow(0 0 5px rgba(91,163,225,.28));
+}
+.dashboard-core-mode .neural-links path{
+  stroke:#8fc7f2;
+  stroke-width:.42;
+  stroke-dasharray:1 11;
+  opacity:.75;
+  animation:signal 7s linear infinite;
+}
+.dashboard-core-mode .neural-links path:nth-child(2){stroke:#69aee2;opacity:.55}
+.dashboard-core-mode .neural-links path:nth-child(3){stroke:#b7ddf7;opacity:.48}
+.dashboard-core-mode .neural-links path:nth-child(4){stroke:#75b9ea;opacity:.6}
+.dashboard-core-mode .neural-nodes{inset:1%;opacity:.72}
+.dashboard-core-mode .neural-nodes i{
+  width:1.7px;height:1.7px;
+  background:#a9d8f7;
+  box-shadow:0 0 5px rgba(133,197,239,.8),0 0 12px rgba(77,151,215,.3);
+  animation:particleDrift 4.5s ease-in-out infinite;
+}
+.dashboard-core-mode .neural-nodes i:nth-child(1){left:11%;top:30%;animation-delay:-.4s}
+.dashboard-core-mode .neural-nodes i:nth-child(2){left:17%;top:20%;animation-delay:-2.1s}
+.dashboard-core-mode .neural-nodes i:nth-child(3){left:25%;top:10%;animation-delay:-1.2s}
+.dashboard-core-mode .neural-nodes i:nth-child(4){left:37%;top:6%;animation-delay:-3.3s}
+.dashboard-core-mode .neural-nodes i:nth-child(5){left:52%;top:8%;animation-delay:-.8s}
+.dashboard-core-mode .neural-nodes i:nth-child(6){left:67%;top:12%;animation-delay:-2.8s}
+.dashboard-core-mode .neural-nodes i:nth-child(7){left:80%;top:23%;animation-delay:-1.6s}
+.dashboard-core-mode .neural-nodes i:nth-child(8){left:88%;top:37%;animation-delay:-3.8s}
+.dashboard-core-mode .neural-nodes i:nth-child(9){left:91%;top:52%;animation-delay:-.9s}
+.dashboard-core-mode .neural-nodes i:nth-child(10){left:86%;top:66%;animation-delay:-2.5s}
+.dashboard-core-mode .neural-nodes i:nth-child(11){left:77%;top:79%;animation-delay:-1.3s}
+.dashboard-core-mode .neural-nodes i:nth-child(12){left:64%;top:88%;animation-delay:-3.6s}
+.dashboard-core-mode .neural-nodes i:nth-child(13){left:48%;top:91%;animation-delay:-1.8s}
+.dashboard-core-mode .neural-nodes i:nth-child(14){left:33%;top:87%;animation-delay:-.6s}
+.dashboard-core-mode .neural-nodes i:nth-child(15){left:20%;top:79%;animation-delay:-2.9s}
+.dashboard-core-mode .neural-nodes i:nth-child(16){left:10%;top:65%;animation-delay:-1.5s}
+.dashboard-core-mode .neural-nodes i:nth-child(17){left:7%;top:49%;animation-delay:-3.1s}
+.dashboard-core-mode .neural-nodes i:nth-child(18){left:20%;top:41%;animation-delay:-2.2s}
+.dashboard-core-mode .neural-nodes i:nth-child(19){left:29%;top:27%;animation-delay:-.7s}
+.dashboard-core-mode .neural-nodes i:nth-child(20){left:43%;top:19%;animation-delay:-3.7s}
+.dashboard-core-mode .neural-nodes i:nth-child(21){left:59%;top:22%;animation-delay:-1.1s}
+.dashboard-core-mode .neural-nodes i:nth-child(22){left:72%;top:34%;animation-delay:-2.6s}
+.dashboard-core-mode .neural-nodes i:nth-child(23){left:76%;top:51%;animation-delay:-.3s}
+.dashboard-core-mode .neural-nodes i:nth-child(24){left:69%;top:67%;animation-delay:-3.2s}
+.dashboard-core-mode .neural-nodes i:nth-child(25){left:55%;top:76%;animation-delay:-1.7s}
+.dashboard-core-mode .neural-nodes i:nth-child(26){left:40%;top:72%;animation-delay:-2.4s}
+.dashboard-core-mode .neural-nodes i:nth-child(27){left:27%;top:61%;animation-delay:-.5s}
+.dashboard-core-mode .neural-nodes i:nth-child(28){left:23%;top:50%;animation-delay:-3.5s}
+.dashboard-core-mode .neural-nodes i:nth-child(29){left:36%;top:39%;animation-delay:-1.4s}
+.dashboard-core-mode .neural-nodes i:nth-child(30){left:49%;top:31%;animation-delay:-2.7s}
+.dashboard-core-mode .neural-nodes i:nth-child(31){left:62%;top:42%;animation-delay:-.2s}
+.dashboard-core-mode .neural-nodes i:nth-child(32){left:64%;top:57%;animation-delay:-3.9s}
+.dashboard-core-mode .neural-nodes i:nth-child(33){left:51%;top:64%;animation-delay:-1.9s}
+.dashboard-core-mode .neural-nodes i:nth-child(34){left:38%;top:56%;animation-delay:-2.3s}
+.dashboard-core-mode .neural-nodes i:nth-child(35){left:45%;top:46%;animation-delay:-.9s}
+.dashboard-core-mode .neural-nodes i:nth-child(36){left:57%;top:52%;animation-delay:-3.4s}
+.dashboard-core-mode .neural-core{
+  width:102px;height:102px;
+  background:
+    radial-gradient(circle at 45% 40%,#fff 0 1.2%,rgba(224,243,255,.98) 4%,rgba(157,210,244,.95) 9%,rgba(70,139,201,.82) 17%,rgba(20,52,82,.92) 31%,rgba(5,14,24,.98) 55%,rgba(2,7,12,.99) 70%,transparent 72%),
+    conic-gradient(from 40deg,rgba(156,215,250,.45),transparent 18%,rgba(48,115,177,.3) 38%,transparent 60%,rgba(126,192,231,.38) 82%,transparent);
+  border-color:rgba(202,232,250,.58);
+  box-shadow:
+    0 0 14px rgba(203,235,255,.5),
+    0 0 42px rgba(74,145,211,.3),
+    0 0 105px rgba(41,101,163,.16),
+    inset 10px -13px 28px rgba(0,0,0,.82),
+    inset -5px 5px 17px rgba(220,242,255,.19);
+  animation:coreReal 6s ease-in-out infinite;
+}
+.dashboard-core-mode .neural-core:before{
+  inset:-9px;
+  border-color:rgba(159,209,239,.18);
+  border-top-color:rgba(214,239,253,.38);
+  box-shadow:0 0 26px rgba(104,174,226,.12);
+  animation:coreMicroRing 8s linear infinite;
+}
+.dashboard-core-mode .neural-core:after{
+  inset:-25px;
+  border-color:rgba(117,177,221,.07);
+  border-top-color:rgba(175,220,248,.15);
+  animation:coreMicroRingReverse 13s linear infinite;
+}
+.dashboard-core-mode .orion-presence:before{
+  background:radial-gradient(circle,rgba(61,133,207,.08),rgba(33,70,108,.035) 34%,transparent 68%);
+  filter:blur(22px);
+}
+.dashboard-core-mode .orion-presence:after{
+  border-color:rgba(153,194,226,.045);
+  box-shadow:0 0 130px rgba(52,115,177,.06),inset 0 0 100px rgba(49,105,160,.025);
+}
+.dashboard-core-mode .command-shell{backdrop-filter:blur(28px) saturate(115%);-webkit-backdrop-filter:blur(28px) saturate(115%)}
+@keyframes orionSphereTurn{to{transform:rotate(360deg) scale(1.01)}}
+@keyframes orionSphereTurnReverse{to{transform:rotate(-360deg) scale(.99)}}
+@keyframes particleDrift{0%,100%{transform:translate(0,0) scale(.7);opacity:.18}35%{transform:translate(2px,-3px) scale(1);opacity:.8}65%{transform:translate(-2px,2px) scale(.8);opacity:.4}}
+@media(max-width:600px){
+ .dashboard-core-mode .orion-neural{width:min(86vw,360px);height:min(86vw,360px)}
+ .dashboard-core-mode .neural-core{width:88px;height:88px}
+}
 </style>
 </head>
 <body>
@@ -257,7 +386,7 @@ body:after{
   <div class="orion-neural">
     <svg class="neural-links" viewBox="0 0 100 100" aria-hidden="true"><path d="M12 50 C28 20 39 25 50 50 S72 80 88 45"/><path d="M18 31 C38 42 42 14 58 25 S74 58 84 69"/><path d="M22 69 C34 55 43 74 54 51 S72 34 80 39"/><path d="M31 16 C45 35 56 34 68 20"/></svg>
     <div class="neural-ring"></div><div class="neural-ring r2"></div><div class="neural-ring r3"></div>
-    <div class="neural-nodes"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="neural-nodes"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="neural-core"></div><div class="orion-face"></div>
   </div><div class="orion-state" id="orionState">ONLINE · IDLE</div>
 </div>
