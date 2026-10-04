@@ -582,7 +582,7 @@ input:focus,textarea:focus,select:focus{border-color:#a27f2d;box-shadow:0 0 0 2p
   <div class="orion-state" id="orionState">ONLINE · IDLE</div>
 </div>
 <div class="command command-shell"><input id="command" placeholder="Talk to ORION..."><button class="btn" id="run">Execute</button></div>
-<div class="voice-controls"><button class="voice-btn" id="voiceListen" title="Talk to ORION" aria-label="Talk to ORION">🎙</button><button class="voice-btn" id="voiceSpeak" title="Speak latest ORION response" aria-label="Speak latest ORION response">🔊</button><span class="voice-status" id="voiceStatus">VOICE READY</span></div>
+<div class="voice-controls"><button class="voice-btn" id="voiceListen" title="Toggle hands-free voice mode" aria-label="Toggle hands-free voice mode">🎙</button><button class="voice-btn" id="voiceSpeak" title="Speak latest ORION response" aria-label="Speak latest ORION response">🔊</button><span class="voice-status" id="voiceStatus">VOICE READY</span></div>
 <div class="command-hint"><span>Ask</span><span>What's happening?</span><span>Plan a mission</span><span>Remember</span><span>Check progress</span></div></section>
 
 <div class="system-strip">
@@ -906,12 +906,17 @@ window.requestBriefing=requestBriefing;
 
 async function speakText(text){
   if(!text)return;
+  if(orionRecognition)stopOrionListening();
+  window.__orionVoiceSpeaking=true;
+  if(window.setOrionState)window.setOrionState('speaking');
   const clean=String(text).replace(/[*_#]/g,'').trim();
   if(window.__orionKokoroSpeak){
     try{
       if($('voiceStatus'))$('voiceStatus').textContent='ORION VOICE LOADING';
       await window.__orionKokoroSpeak(clean);
-      if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY';
+      window.__orionVoiceSpeaking=false;
+      if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'VOICE READY · LISTENING':'VOICE READY';
+      if(orionVoiceMode&&!orionVoiceBusy)setTimeout(startOrionListening,350);
       return;
     }catch(e){
       console.warn('Kokoro voice failed, using browser fallback:',e);
@@ -925,25 +930,79 @@ async function speakText(text){
   if(preferred)u.voice=preferred;
   u.lang=preferred?.lang||'en-ZA';u.rate=.94;u.pitch=.82;u.volume=1;
   u.onstart=()=>{if($('voiceStatus'))$('voiceStatus').textContent='ORION SPEAKING'};
-  u.onend=()=>{if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY'};
+  u.onend=()=>{
+    window.__orionVoiceSpeaking=false;
+    if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'VOICE READY · LISTENING':'VOICE READY';
+    if(window.setOrionState)window.setOrionState('idle');
+    if(orionVoiceMode&&!orionVoiceBusy)setTimeout(startOrionListening,350);
+  };
   window.speechSynthesis.speak(u);
 }
 window.speakText=speakText;
 
 let orionRecognition=null;
+let orionVoiceMode=false;
+let orionVoiceBusy=false;
+function setVoiceStatus(label){
+  if($('voiceStatus'))$('voiceStatus').textContent=label;
+}
+function stopOrionListening(){
+  if(!orionRecognition)return;
+  try{orionRecognition.stop()}catch{}
+}
+function startOrionListening(){
+  if(!orionRecognition||!orionVoiceMode||orionVoiceBusy)return;
+  try{orionRecognition.start()}catch{}
+}
 function setupVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){if($('voiceStatus'))$('voiceStatus').textContent='VOICE INPUT UNAVAILABLE';return}
+  if(!SR){setVoiceStatus('VOICE INPUT UNAVAILABLE');return}
   orionRecognition=new SR();
-  orionRecognition.lang='en-ZA';orionRecognition.continuous=false;orionRecognition.interimResults=false;orionRecognition.maxAlternatives=1;
-  orionRecognition.onstart=()=>{if($('voiceStatus'))$('voiceStatus').textContent='LISTENING…';$('voiceListen')?.classList.add('listening')};
-  orionRecognition.onend=()=>{$('voiceListen')?.classList.remove('listening');if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY'};
-  orionRecognition.onerror=e=>{$('voiceListen')?.classList.remove('listening');if($('voiceStatus'))$('voiceStatus').textContent='VOICE ERROR: '+(e.error||'UNKNOWN')};
+  orionRecognition.lang='en-ZA';
+  orionRecognition.continuous=false;
+  orionRecognition.interimResults=false;
+  orionRecognition.maxAlternatives=1;
+  orionRecognition.onstart=()=>{
+    setVoiceStatus('LISTENING…');
+    $('voiceListen')?.classList.add('listening');
+    if(window.setOrionState)window.setOrionState('listening');
+  };
+  orionRecognition.onend=()=>{
+    $('voiceListen')?.classList.remove('listening');
+    if(orionVoiceMode&&!orionVoiceBusy){
+      setVoiceStatus('VOICE READY · TAP MIC TO STOP');
+      setTimeout(startOrionListening,350);
+    }else if(!orionVoiceBusy){
+      setVoiceStatus('VOICE READY');
+    }
+  };
+  orionRecognition.onerror=e=>{
+    $('voiceListen')?.classList.remove('listening');
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      orionVoiceMode=false;
+      setVoiceStatus('MIC PERMISSION REQUIRED');
+      return;
+    }
+    if(e.error!=='aborted')setVoiceStatus('VOICE ERROR: '+(e.error||'UNKNOWN'));
+  };
   orionRecognition.onresult=async e=>{
     const spoken=e.results?.[0]?.[0]?.transcript?.trim();
     if(!spoken)return;
+    orionVoiceBusy=true;
+    stopOrionListening();
     $('command').value=spoken;
-    try{await handleCommand(spoken);$('command').value=''}catch(err){addFeed('ORION','Voice command failed: '+err.message,'system')}
+    if(window.setOrionState)window.setOrionState('thinking');
+    try{
+      await handleCommand(spoken);
+      $('command').value='';
+    }catch(err){
+      const message='Voice command failed: '+(err?.message||'Unknown error');
+      addFeed('ORION',message,'system');
+      await speakText(message);
+    }finally{
+      orionVoiceBusy=false;
+      if(orionVoiceMode&&!window.__orionVoiceSpeaking)setTimeout(startOrionListening,500);
+    }
   };
 }
 setupVoice();
@@ -1200,7 +1259,20 @@ $('addTool').onclick=()=>{$('toolModal').classList.remove('hidden')};$('closeToo
 $('closeGeneric').onclick=$('cancelGeneric').onclick=()=>{$('genericToolModal').classList.add('hidden')};$('saveGeneric').onclick=async()=>{const toolId=$('genericToolId').value,name=$('genericName').value.trim()||'Default',authType=$('genericAuth').value,baseUrl=$('genericBaseUrl').value.trim(),secret=$('genericSecret').value,authHeader=$('genericAuthHeader').value.trim()||'X-API-Key';if(!baseUrl){$('genericMsg').textContent='Base URL is required.';return}const {data,error}=await sb.functions.invoke('orion-connect',{body:{operation:'save_adapter',toolId,name,baseUrl,authType,secret,authHeader}});if(error||!data?.ok){$('genericMsg').textContent=data?.error||error?.message||'Connection failed.';return}$('genericSecret').value='';$('genericToolModal').classList.add('hidden');await loadConnections();addFeed('ORION','Adapter connection established.','system')};$('logout').onclick=async()=>{await sb.auth.signOut();showLogin()}
 $('run').onclick=async()=>{const v=$('command').value.trim();if(!v)return;$('run').disabled=true;try{await handleCommand(v);$('command').value=''}catch(e){addFeed('ORION','Command failed: '+e.message,'system')}finally{$('run').disabled=false}}
 $('command').addEventListener('keydown',e=>{if(e.key==='Enter')$('run').click()});
-$('voiceListen').onclick=()=>{if(!orionRecognition){setupVoice();if(!orionRecognition)return}try{orionRecognition.start()}catch{}};
+$('voiceListen').onclick=()=>{
+  if(!orionRecognition){setupVoice();if(!orionRecognition)return}
+  orionVoiceMode=!orionVoiceMode;
+  if(orionVoiceMode){
+    setVoiceStatus('VOICE MODE STARTING…');
+    $('voiceListen')?.classList.add('listening');
+    startOrionListening();
+  }else{
+    stopOrionListening();
+    $('voiceListen')?.classList.remove('listening');
+    setVoiceStatus('VOICE READY');
+    if(window.setOrionState)window.setOrionState('idle');
+  }
+};
 $('voiceSpeak').onclick=()=>speakText(window.__orionLatestBriefing||'ORION voice is online. Ask me what is happening.');
 document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>{$('command').value=b.dataset.cmd;$('command').focus()});
 function initializeAuth(){ $('authmsg').textContent='Checking ORION session…'; }
