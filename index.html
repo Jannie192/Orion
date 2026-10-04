@@ -64,6 +64,40 @@
 @keyframes coreBreath{0%,100%{transform:translate(-50%,-50%) scale(.9)}50%{transform:translate(-50%,-50%) scale(1.12)}}
 @keyframes orionOrbit{to{transform:rotate(360deg)}}@keyframes orionOrbitReverse{to{transform:rotate(-360deg)}}@keyframes orionRing{0%,100%{opacity:.35;transform:rotate(58deg) scaleX(.72)}50%{opacity:.8;transform:rotate(66deg) scaleX(.8)}}
 @media(max-width:560px){.orion-presence{height:205px;margin-bottom:10px}.orion-state{bottom:-2px}}
+
+/* ORION dashboard focus — command-core mode */
+.dashboard-core-mode .shell{max-width:none;min-height:100svh;padding:0 22px;display:flex;flex-direction:column}
+.dashboard-core-mode .top{position:fixed;top:22px;left:22px;right:22px;z-index:20;margin:0;pointer-events:none}
+.dashboard-core-mode .top .brand,.dashboard-core-mode .logout{display:none}
+.dashboard-core-mode .top>div:last-child{margin-left:auto;pointer-events:auto}
+.dashboard-core-mode .hero{position:relative;width:100%;max-width:none;min-height:100svh;margin:0;padding:0;display:flex;align-items:center;justify-content:center}
+.dashboard-core-mode .hero>.eyebrow,.dashboard-core-mode .hero>h1,.dashboard-core-mode .hero>p,.dashboard-core-mode .voice-controls,.dashboard-core-mode .command-hint,.dashboard-core-mode .orion-state{display:none}
+.dashboard-core-mode .orion-presence{width:min(620px,88vw);height:min(620px,76svh);margin:0;display:grid;place-items:center;transform:translateY(-3vh)}
+.dashboard-core-mode .orion-presence:before{content:'';position:absolute;width:min(520px,76vw);height:min(520px,76vw);border-radius:50%;background:radial-gradient(circle,rgba(79,142,255,.12) 0%,rgba(52,105,186,.07) 26%,rgba(18,43,78,.035) 52%,transparent 72%);filter:blur(10px);animation:coreAura 4.8s ease-in-out infinite;pointer-events:none}
+.dashboard-core-mode .orion-presence:after{content:'';position:absolute;width:min(430px,64vw);height:min(430px,64vw);border:1px solid rgba(120,169,235,.08);border-radius:50%;box-shadow:0 0 90px rgba(71,130,226,.08),inset 0 0 70px rgba(71,130,226,.035);animation:presenceHalo 8s ease-in-out infinite;pointer-events:none}
+.dashboard-core-mode .orion-neural{width:clamp(260px,43vw,390px);height:clamp(260px,43vw,390px);filter:drop-shadow(0 0 34px rgba(74,139,255,.24));}
+.dashboard-core-mode .orion-neural:before{inset:7%;border-color:rgba(139,184,255,.34);box-shadow:inset 0 0 45px rgba(91,145,210,.12),0 0 30px rgba(91,145,210,.08);animation:orionOrbit 7s linear infinite}
+.dashboard-core-mode .orion-neural:after{inset:-1%;border-color:rgba(139,184,255,.16);box-shadow:0 0 45px rgba(77,141,255,.1);animation:orionOrbitReverse 10s linear infinite}
+.dashboard-core-mode .neural-ring{inset:13%;border-color:rgba(111,156,255,.27);box-shadow:0 0 25px rgba(91,145,210,.08);animation-duration:5s}
+.dashboard-core-mode .neural-ring.r2{inset:8%;border-color:rgba(111,156,255,.18);animation-duration:7s}
+.dashboard-core-mode .neural-ring.r3{inset:22%;border-color:rgba(174,211,255,.22);animation-duration:4s}
+.dashboard-core-mode .neural-links{opacity:.65;filter:drop-shadow(0 0 4px rgba(110,168,255,.45));transform:scale(1.02)}
+.dashboard-core-mode .neural-links path{stroke-width:.9;stroke:#82b5ff;stroke-dasharray:2 6;animation-duration:1.8s}
+.dashboard-core-mode .neural-nodes i{width:5px;height:5px;opacity:.8;box-shadow:0 0 12px #8bb8ff,0 0 24px rgba(110,168,255,.45);animation-duration:2.2s}
+.dashboard-core-mode .neural-core{width:72px;height:72px;border-color:rgba(220,238,255,.95);background:radial-gradient(circle,#ffffff 0 3%,#dcecff 7%,#8bb8ff 16%,#4d8dff 27%,rgba(77,141,255,.28) 48%,transparent 72%);box-shadow:0 0 28px rgba(139,184,255,.9),0 0 75px rgba(77,141,255,.55),0 0 145px rgba(57,117,220,.2),inset 0 0 28px rgba(255,255,255,.3);animation:corePower 2.15s ease-in-out infinite}
+.dashboard-core-mode .neural-core:before{content:'';position:absolute;inset:-15px;border-radius:50%;border:1px solid rgba(139,184,255,.18);box-shadow:0 0 30px rgba(110,168,255,.18);animation:coreRing 3.2s linear infinite}
+.dashboard-core-mode .neural-core:after{content:'';position:absolute;inset:-32px;border-radius:50%;border:1px solid rgba(139,184,255,.08);animation:coreRingReverse 5.5s linear infinite}
+.dashboard-core-mode .command-shell{position:absolute;z-index:10;left:50%;bottom:clamp(30px,8vh,78px);transform:translateX(-50%);width:min(700px,calc(100vw - 34px));margin:0;padding:7px;background:rgba(8,13,20,.62);backdrop-filter:blur(22px) saturate(130%);-webkit-backdrop-filter:blur(22px) saturate(130%);border:1px solid rgba(116,151,195,.25);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.55),0 0 45px rgba(58,111,190,.09),inset 0 1px 0 rgba(255,255,255,.045)}
+.dashboard-core-mode .command-shell:before{content:'';position:absolute;inset:-1px;border-radius:20px;background:linear-gradient(90deg,transparent,rgba(130,181,255,.18),transparent);opacity:.55;pointer-events:none}
+.dashboard-core-mode .command-shell input{padding:16px 17px;font-size:14px}
+.dashboard-core-mode .command-shell .btn{height:46px;border-radius:14px}
+.dashboard-core-mode .system-strip,.dashboard-core-mode .grid,.dashboard-core-mode .tabs,.dashboard-core-mode .layout,.dashboard-core-mode .section{display:none!important}
+@keyframes coreAura{0%,100%{transform:scale(.94);opacity:.72}50%{transform:scale(1.07);opacity:1}}
+@keyframes presenceHalo{0%,100%{transform:scale(.94) rotate(0deg);opacity:.45}50%{transform:scale(1.05) rotate(18deg);opacity:.8}}
+@keyframes corePower{0%,100%{transform:translate(-50%,-50%) scale(.92);filter:brightness(.95)}50%{transform:translate(-50%,-50%) scale(1.12);filter:brightness(1.25)}}
+@keyframes coreRing{to{transform:rotate(360deg)}}
+@keyframes coreRingReverse{to{transform:rotate(-360deg)}}
+@media(max-width:600px){.dashboard-core-mode .shell{padding:0 12px}.dashboard-core-mode .top{top:16px;left:14px;right:14px}.dashboard-core-mode .orion-presence{width:100vw;height:72svh;transform:translateY(-4vh)}.dashboard-core-mode .orion-neural{width:min(82vw,330px);height:min(82vw,330px)}.dashboard-core-mode .command-shell{bottom:24px;width:calc(100vw - 24px)}.dashboard-core-mode .command-shell .btn{padding:0 14px}}
 </style>
 </head>
 <body>
@@ -77,7 +111,7 @@
 </div></div>
 <div id="authTransition" class="auth-transition hidden" aria-live="polite"><div class="auth-transition-inner"><div class="auth-core"><i></i></div><div id="authTransitionLabel" class="auth-transition-label">AUTHENTICATING</div><div id="authTransitionSub" class="auth-transition-sub">Establishing secure ORION session…</div></div></div>
 
-<div id="app" class="hidden"><div class="shell">
+<div id="app" class="hidden dashboard-core-mode"><div class="shell">
 <div class="top"><div class="brand"><div class="orb"></div>ORION</div><div><span class="status"><i class="dot"></i> ONLINE</span><button class="logout" id="logout">Sign out</button></div></div>
 <section class="hero"><div class="eyebrow">PERSONAL AI OS</div>
 <h1 id="greeting">Good to see you.</h1><p>One command center for memory, goals, projects, tasks and agents. Your command history stays in your private workspace.</p>
