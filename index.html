@@ -659,11 +659,14 @@ window.addEventListener('error',e=>{const el=document.getElementById('authmsg');
 void initializeAuthClient();
 function initTabs(){document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('tab-'+b.dataset.tab).classList.add('active')})}
 function renderMissions(){if(user)loadMissions()}
+function getOrionClockContext(){const now=new Date(),zone=Intl.DateTimeFormat().resolvedOptions().timeZone||'Africa/Johannesburg',time=new Intl.DateTimeFormat('en-ZA',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:zone}).format(now),date=new Intl.DateTimeFormat('en-ZA',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:zone}).format(now),h=Number(new Intl.DateTimeFormat('en-ZA',{hour:'2-digit',hour12:false,timeZone:zone}).format(now)),period=h<5?'night':h<12?'morning':h<18?'afternoon':'evening';return{iso:now.toISOString(),timezone:zone,date,time,hour:h,period,greeting:'Good '+period+', sir.'}}
+function getTimeGreeting(){return getOrionClockContext().greeting}
+function withOrionClock(context){return {...(context||{}),currentTime:getOrionClockContext()}}
 async function showApp(u){
  user=u;
  const previousSeen=localStorage.getItem('orion_last_seen_at');
  $('login').classList.add('hidden');$('app').classList.remove('hidden');
- $('greeting').textContent='Good morning, sir.';
+ const clock=getOrionClockContext();$('greeting').textContent=clock.greeting;
  if(!booting){booting=true;try{await boot();await requestBriefing({speak:false,since:previousSeen||new Date(Date.now()-24*60*60*1000).toISOString()})}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
 }
 function showLogin(){if(authBusy)return;$('app').classList.add('hidden');$('login').classList.remove('hidden');user=null;conversationId=null}
