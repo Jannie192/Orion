@@ -464,7 +464,8 @@ async function launchRevenueMission(){
 async function handleCommand(v,options={}){
   await saveMessage('user',v);addFeed('YOU',v,'you');
   const low=v.toLowerCase().replace(/[?!.,]/g,'').trim();
-  if(low==='find 10 businesses'||low==='find ten businesses'||low.includes('website prospects')||low.includes('find businesses that need websites')||low==='revenue engine'){await launchRevenueMission();return;}\n  if(low.includes('what companies did you research')||low.includes('which companies did you research')||low.includes('show me the research')||low.includes('show research')||low.includes('tell me about the companies you researched')||low.includes('most promising companies')||low.includes('research you did')){
+  if(low==='find 10 businesses'||low==='find ten businesses'||low.includes('website prospects')||low.includes('find businesses that need websites')||low==='revenue engine'){await launchRevenueMission();return;}
+  if(low.includes('what companies did you research')||low.includes('which companies did you research')||low.includes('show me the research')||low.includes('show research')||low.includes('tell me about the companies you researched')||low.includes('most promising companies')||low.includes('research you did')){
    const q=low.includes('most promising')?'':(low.match(/(?:research|companies) (?:about|on|for) (.+)$/)?.[1]||'');
    const reply=await researchBriefing(q); await saveMessage('assistant',reply); addFeed('ORION',reply,'system'); await loadResearch(q); return;
   }
