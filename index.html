@@ -1015,7 +1015,7 @@ async function handleCommand(v,options={}){
   }
   if(low.startsWith('mission ')){
     const title=v.slice(8).trim();
-    const context=await getReasoningContext();const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title,context}});
+    const context=withOrionClock(await getReasoningContext());const {data:m,error}=await sb.functions.invoke('orion-mission',{body:{objective:title,context}});
     if(error)throw error;
     const mission=m?.mission;
     const reply='Mission planned: '+(mission?.title||title)+'. ORION created '+(m?.steps?.length||0)+' execution steps and is tracking them now.';await saveMessage('assistant',reply);addFeed('ORION',reply,'system');await loadMissions();await loadAgentEvents();
@@ -1040,7 +1040,7 @@ async function handleCommand(v,options={}){
     if(error)throw error;
     const reply='Task created: '+title;await saveMessage('assistant',reply);addFeed('ORION',reply,'system');
   }else{
-    const context=await getReasoningContext();
+    const context=withOrionClock(await getReasoningContext());
     const {data,error}=await sb.functions.invoke('orion-brain',{body:{
       command:v,
       context
