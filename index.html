@@ -1108,6 +1108,7 @@ async function handleCommand(v,options={}){
     const reply='Task created: '+title;await saveMessage('assistant',reply);await speakText(reply);addFeed('ORION',reply,'system');
   }else{
     const context=withOrionClock(await getReasoningContext());
+    context.activeConversation={...(context.activeConversation||{}),currentUserMessage:v,instruction:'Resolve this message against the recent conversation. Treat follow-ups, corrections, shorthand, pronouns, quantities and location changes as refinements of the previous request when context supports that. Do not make the user repeat information already known.'};
     const {data,error}=await sb.functions.invoke('orion-brain',{body:{
       command:v,
       context
