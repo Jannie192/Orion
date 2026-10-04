@@ -667,7 +667,7 @@ async function showApp(u){
  const previousSeen=localStorage.getItem('orion_last_seen_at');
  $('login').classList.add('hidden');$('app').classList.remove('hidden');
  const clock=getOrionClockContext();$('greeting').textContent=clock.greeting;
- if(!booting){booting=true;try{await boot();await requestBriefing({speak:false,since:previousSeen||new Date(Date.now()-24*60*60*1000).toISOString()})}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
+ if(!booting){booting=true;try{await boot();await requestBriefing({speak:true,since:previousSeen||new Date(Date.now()-24*60*60*1000).toISOString()})}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
 }
 function showLogin(){if(authBusy)return;$('app').classList.add('hidden');$('login').classList.remove('hidden');user=null;conversationId=null}
 function addFeed(role,content,kind=''){const el=document.createElement('div');el.className='msg '+kind;el.innerHTML='<div class="meta">'+esc(role)+'</div>'+esc(content).replace(/\n/g,'<br>');$('feed').prepend(el)}
