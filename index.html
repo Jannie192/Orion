@@ -906,6 +906,7 @@ window.requestBriefing=requestBriefing;
 
 async function speakText(text){
   if(!text)return;
+  if(window.__orionStopSpeaking)window.__orionStopSpeaking();
   if(orionRecognition)stopOrionListening();
   window.__orionVoiceSpeaking=true;
   if(window.setOrionState)window.setOrionState('speaking');
@@ -986,6 +987,7 @@ function setupVoice(){
     if(e.error!=='aborted')setVoiceStatus('VOICE ERROR: '+(e.error||'UNKNOWN'));
   };
   orionRecognition.onresult=async e=>{
+    if(window.__orionVoiceSpeaking&&window.__orionStopSpeaking)window.__orionStopSpeaking();
     const spoken=e.results?.[0]?.[0]?.transcript?.trim();
     if(!spoken)return;
     orionVoiceBusy=true;
@@ -1279,7 +1281,15 @@ function initializeAuth(){ $('authmsg').textContent='Checking ORION session…';
 window.__ORION_MAIN_READY=true;
 void initializeAuth();
 </script><script type="module">
-window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;
+window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let activePlayer=null;
+  window.__orionStopSpeaking=()=>{
+    try{
+      if(activePlayer){activePlayer.pause();activePlayer.currentTime=0;activePlayer=null;}
+    }catch{}
+    try{window.speechSynthesis?.cancel()}catch{}
+    window.__orionVoiceSpeaking=false;
+    if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'LISTENING…':'VOICE READY';
+  };
   const load=async()=>{
     if(ttsPromise)return ttsPromise;
     ttsPromise=(async()=>{
@@ -1302,9 +1312,11 @@ window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;
     if(currentUrl)URL.revokeObjectURL(currentUrl);
     currentUrl=URL.createObjectURL(blob);
     const player=new Audio(currentUrl);
+    activePlayer=player;
     player.volume=1;
     if($('voiceStatus'))$('voiceStatus').textContent='ORION SPEAKING';if(window.setOrionState)window.setOrionState('speaking');
-    player.onended=()=>{if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY';if(window.setOrionState)window.setOrionState('idle')};
+    player.onended=()=>{if(activePlayer===player)activePlayer=null;if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY';if(window.setOrionState)window.setOrionState('idle')};
+    player.onpause=()=>{if(activePlayer===player&&player.ended===false){if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'LISTENING…':'VOICE READY';if(window.setOrionState)window.setOrionState('idle')}};
     await player.play();
   };
 })();
