@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>ORION</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://browser.sentry-cdn.com/7.120.4/bundle.min.js" crossorigin="anonymous"></script><script>try{if(window.Sentry){Sentry.init({dsn:"https://b652a3ea7a0c48442a8ebd738a88e3e7@o4512202756325376.ingest.de.sentry.io/4512202783260752",environment:"production",tracesSampleRate:0.1,integrations:[]});window.__ORION_SENTRY_READY=true}}catch(e){console.error("[ORION] Sentry init failed",e)}</script>
 <style>
 :root{--bg:#06080c;--panel:#0c1118;--panel2:#101722;--line:#1d2938;--text:#eef4fc;--muted:#8190a4;--accent:#8bb8ff;--good:#72e0ad;--warn:#ffd37a;--danger:#ff8f9a}
 *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(circle at 50% -10%,#172844 0,#06080c 42%);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}button,input,textarea{font:inherit}button{cursor:pointer}
@@ -1607,6 +1607,68 @@ window.__orionToggleVoice=toggle;
 function bind(){const run=$('run'),cmd=$('command'),mic=$('voiceListen'),sp=$('voiceSpeak');if(run&&!run.dataset.orionRuntime){run.dataset.orionRuntime='1';run.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();const v=cmd?.value?.trim();if(!v)return;reply(v).then(()=>{if(cmd)cmd.value=''}).catch(()=>{})},true)}if(cmd&&!cmd.dataset.orionRuntime){cmd.dataset.orionRuntime='1';cmd.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();run?.click()}},true)}if(mic&&!mic.dataset.orionRuntime){mic.dataset.orionRuntime='1';mic.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();toggle()},true)}if(sp&&!sp.dataset.orionRuntime){sp.dataset.orionRuntime='1';sp.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();speak(window.__orionLatestBriefing||'ORION is online and ready.')},true)}}
 window.addEventListener('error',e=>err(e.error||new Error(e.message||'Unknown browser error'),{source:'window'}));window.addEventListener('unhandledrejection',e=>err(e.reason instanceof Error?e.reason:new Error(String(e.reason)),{source:'unhandledrejection'}));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();setTimeout(bind,250);setTimeout(bind,1000);window.__ORION_RUNTIME_V2=true;console.log('[ORION] runtime v2 installed')
+})();
+</script>
+
+<script>
+(function(){
+'use strict';
+var U="https://bhgnzdtjapdnwrybtlwq.supabase.co",K="sb_publishable_GtTWrR0i4fnq12EgfsnGyQ_eyHsdT6a",AK="orion-auth-v3";
+var sb=null,rec=null,listening=false,busy=false,speaking=false;
+function el(id){return document.getElementById(id)}
+function err(e,c){try{window.Sentry&&window.Sentry.captureException(e,{extra:c||{}})}catch(_){}console.error("[ORION]",e,c||{})}
+function st(v){try{window.setOrionState&&window.setOrionState(v)}catch(_){}}
+function vs(v){var x=el("voiceStatus");if(x)x.textContent=v}
+function add(role,text,kind){var f=el("feed");if(!f)return;var r=document.createElement("div");r.className="msg "+(kind||"system");var m=document.createElement("div");m.className="meta";m.textContent=role;var b=document.createElement("div");b.textContent=String(text||"");r.append(m,b);f.prepend(r)}
+function getClient(){if(sb)return Promise.resolve(sb);if(!window.supabase||!window.supabase.createClient)return Promise.reject(new Error("Supabase client failed to load."));sb=window.supabase.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage,storageKey:AK}});return Promise.resolve(sb)}
+async function getSession(){var c=await getClient(),r=await c.auth.getSession();if(r.error)throw r.error;if(!r.data||!r.data.session)throw new Error("ORION session is missing. Sign in again.");try{window.Sentry&&window.Sentry.setUser({id:r.data.session.user.id})}catch(_){}return r.data.session}
+async function brain(command){
+ var s=await getSession(),body={command:String(command),context:{currentTime:{iso:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||"Africa/Johannesburg"},activeConversation:{currentUserMessage:String(command),followUpContext:true},memories:[],goals:[],tasks:[],projects:[],missions:[],agentEvents:[],missionRuns:[],capabilityRequests:[],recentMessages:[],recentRecommendations:[],recentChallenges:[]}};
+ var ac=new AbortController(),timer=setTimeout(function(){ac.abort()},60000);
+ try{var r=await fetch(U+"/functions/v1/orion-brain",{method:"POST",headers:{"Content-Type":"application/json","apikey":K,"Authorization":"Bearer "+s.access_token},body:JSON.stringify(body),signal:ac.signal});var raw=await r.text(),d=null;try{d=raw?JSON.parse(raw):null}catch(_){}if(!r.ok)throw new Error("ORION brain HTTP "+r.status+": "+((d&&d.error)||raw||r.statusText));if(!d||!d.ok)throw new Error((d&&d.error)||"ORION brain returned no usable response.");return d}
+ catch(e){if(e&&e.name==="AbortError")throw new Error("ORION brain timed out after 60 seconds.");throw e}
+ finally{clearTimeout(timer)}
+}
+function out(d){var s=(d&&d.synthesis)||{};return [s.title,s.recommendation||s.rationale||"ORION received your command."].filter(Boolean).join(": ")}
+async function speak(text){
+ var t=String(text||"").replace(/[*_#]/g,"").trim();if(!t)return;
+ window.__orionLatestBriefing=t;
+ if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)throw new Error("Speech output is not available in this browser.");
+ speaking=true;st("speaking");vs("ORION SPEAKING");
+ var sy=window.speechSynthesis;try{sy.cancel();sy.resume()}catch(_){}
+ var voices=sy.getVoices?sy.getVoices():[],v=voices.find(function(x){return /^en-ZA/i.test(x.lang)})||voices.find(function(x){return /^en-GB/i.test(x.lang)})||voices.find(function(x){return /^en-US/i.test(x.lang)})||voices.find(function(x){return /^en/i.test(x.lang)})||voices.find(function(x){return x.default});
+ await new Promise(function(resolve,reject){var u=new SpeechSynthesisUtterance(t);u.lang=v&&v.lang||"en-ZA";if(v)u.voice=v;u.rate=.96;u.pitch=.88;u.volume=1;u.onend=resolve;u.onerror=function(e){reject(new Error("Speech output failed: "+((e&&e.error)||"unknown")))};sy.speak(u)}).catch(function(e){err(e,{stage:"tts"});throw e});
+ speaking=false;st("idle");if(!listening)vs("VOICE READY");
+}
+window.speakText=speak;
+window.__orionStopSpeaking=function(){try{window.speechSynthesis&&window.speechSynthesis.cancel()}catch(_){}speaking=false;st("idle")};
+async function execute(command,voiceMode){
+ var v=String(command||"").trim();if(!v||busy)return;busy=true;var run=el("run");if(run)run.disabled=true;st("thinking");vs(voiceMode?"THINKING…":"BRAIN PROCESSING…");add("YOU",v,"you");add("ORION","Thinking…","system");
+ try{var d=await brain(v),reply=out(d);window.__orionLatestBriefing=reply;add("ORION",reply,"system");if(voiceMode)await speak(reply);else{st("idle");vs("VOICE READY")}}
+ catch(e){err(e,{stage:"execute",command:v});add("ORION","Core error: "+(e&&e.message||String(e)),"system");st("idle");vs("BRAIN ERROR");if(voiceMode){try{await speak("I hit a core error. "+(e&&e.message||"Please try again."))}catch(_){}}}
+ finally{busy=false;if(run)run.disabled=false}
+}
+function makeRec(){
+ var SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){vs("VOICE INPUT UNSUPPORTED");return null}
+ var r=new SR();r.lang="en-ZA";r.continuous=false;r.interimResults=false;r.maxAlternatives=1;
+ r.onstart=function(){listening=true;st("listening");vs("LISTENING…");var p=el("voicePrompt");if(p)p.textContent="LISTENING";var b=el("voiceListen");if(b)b.classList.add("listening")};
+ r.onresult=function(e){var t=e.results&&e.results[0]&&e.results[0][0]&&e.results[0][0].transcript;if(!t)return;listening=false;var b=el("voiceListen");if(b)b.classList.remove("listening");var c=el("command");if(c)c.value=t;execute(t,true).finally(function(){if(c)c.value=""})};
+ r.onerror=function(e){listening=false;var b=el("voiceListen");if(b)b.classList.remove("listening");err(new Error("Speech recognition: "+((e&&e.error)||"unknown")),{stage:"speech"});vs(e&&["not-allowed","service-not-allowed"].includes(e.error)?"MIC PERMISSION REQUIRED":"VOICE ERROR");st("idle")};
+ r.onend=function(){listening=false;var b=el("voiceListen");if(b)b.classList.remove("listening");if(!speaking)st("idle")};
+ return r
+}
+function toggleVoice(){if(listening){try{rec&&rec.stop()}catch(_){}return}if(!rec)rec=makeRec();if(!rec)return;vs("MIC STARTING…");try{rec.start()}catch(e){err(e,{stage:"speech-start"});vs("TAP MIC AGAIN")}}
+function bind(){
+ var run=el("run"),cmd=el("command"),mic=el("voiceListen"),sp=el("voiceSpeak");
+ if(run&&!run.dataset.orionV3){run.dataset.orionV3="1";run.addEventListener("click",function(e){e.preventDefault();e.stopImmediatePropagation();var v=cmd&&cmd.value.trim();if(!v)return;execute(v,false).then(function(){if(cmd)cmd.value=""})},true)}
+ if(cmd&&!cmd.dataset.orionV3){cmd.dataset.orionV3="1";cmd.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();if(run)run.click()}},true)}
+ if(mic&&!mic.dataset.orionV3){mic.dataset.orionV3="1";mic.addEventListener("click",function(e){e.preventDefault();e.stopImmediatePropagation();toggleVoice()},true)}
+ if(sp&&!sp.dataset.orionV3){sp.dataset.orionV3="1";sp.addEventListener("click",function(e){e.preventDefault();e.stopImmediatePropagation();speak(window.__orionLatestBriefing||"ORION is online and ready.")},true)}
+}
+window.addEventListener("error",function(e){err(e.error||new Error(e.message||"Browser error"),{stage:"window"})});
+window.addEventListener("unhandledrejection",function(e){err(e.reason instanceof Error?e.reason:new Error(String(e.reason)),{stage:"unhandledrejection"})});
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind,{once:true});else bind();setTimeout(bind,250);setTimeout(bind,1000);setTimeout(bind,2500);
+window.__ORION_RUNTIME_V3=true;console.log("[ORION] runtime v3 online");
 })();
 </script>
 </body>
