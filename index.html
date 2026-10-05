@@ -1542,5 +1542,102 @@ window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let acti
   else setTimeout(detachVoiceControls,0);
 })();
 </script>
+<style id="orion-interaction-recovery">
+/* Final interaction override: voice controls stay detached from the core. */
+.voice-controls.voice-detached,.voice-controls{
+  position:fixed!important;
+  left:14px!important;
+  top:72px!important;
+  right:auto!important;
+  bottom:auto!important;
+  margin:0!important;
+  z-index:9990!important;
+}
+@media(max-width:560px){
+  .voice-controls.voice-detached,.voice-controls{
+    left:10px!important;
+    top:72px!important;
+  }
+}
+</style>
+<script>
+<!-- ORION INTERACTION RECOVERY -->
+(function(){
+  function bindRecovery(){
+    const command=document.getElementById('command');
+    const run=document.getElementById('run');
+    const listen=document.getElementById('voiceListen');
+    const speak=document.getElementById('voiceSpeak');
+
+    if(run && !run.dataset.orionRecoveryBound){
+      run.dataset.orionRecoveryBound='1';
+      run.addEventListener('click',async function(){
+        const v=(command?.value||'').trim();
+        if(!v)return;
+        try{
+          run.disabled=true;
+          run.dataset.recoveryState='running';
+          if(window.setOrionState)window.setOrionState('thinking');
+          if(typeof window.handleCommand==='function'){
+            await window.handleCommand(v);
+            if(command)command.value='';
+          }else{
+            throw new Error('ORION command engine is not initialized.');
+          }
+        }catch(e){
+          console.error('ORION recovery command error',e);
+          const feed=document.getElementById('feed');
+          if(feed){
+            const el=document.createElement('div');
+            el.className='msg system';
+            el.innerHTML='<div class="meta">ORION</div>'+String(e?.message||'Command failed.').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+            feed.prepend(el);
+          }
+        }finally{
+          run.disabled=false;
+          run.dataset.recoveryState='ready';
+          if(window.setOrionState)window.setOrionState('idle');
+        }
+      },true);
+    }
+
+    if(command && !command.dataset.orionRecoveryBound){
+      command.dataset.orionRecoveryBound='1';
+      command.addEventListener('keydown',function(e){
+        if(e.key==='Enter'){
+          e.preventDefault();
+          run?.click();
+        }
+      },true);
+    }
+
+    if(listen && !listen.dataset.orionRecoveryBound){
+      listen.dataset.orionRecoveryBound='1';
+      listen.addEventListener('click',function(){
+        try{
+          if(typeof window.setupVoice==='function' && !window.__orionRecognitionReady) window.setupVoice();
+          if(typeof window.startOrionListening==='function' && window.orionVoiceMode) window.startOrionListening();
+        }catch(e){
+          console.error('ORION recovery voice error',e);
+        }
+      },true);
+    }
+
+    if(speak && !speak.dataset.orionRecoveryBound){
+      speak.dataset.orionRecoveryBound='1';
+      speak.addEventListener('click',function(){
+        try{
+          if(typeof window.speakText==='function') window.speakText(window.__orionLatestBriefing||'ORION voice is online.');
+        }catch(e){ console.error('ORION recovery speak error',e); }
+      },true);
+    }
+
+    window.__ORION_INTERACTION_RECOVERY=true;
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindRecovery,{once:true});
+  else bindRecovery();
+})();
+</script>
 </body>
 </html>
