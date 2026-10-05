@@ -774,7 +774,7 @@ async function showApp(u){
  const previousSeen=localStorage.getItem('orion_last_seen_at');
  $('login').classList.add('hidden');$('app').classList.remove('hidden');
  const clock=getOrionClockContext();$('greeting').textContent=clock.greeting;
- if(!booting){booting=true;try{await boot();const welcome=clock.greeting+' I’m ORION. I’m online and ready for you.';window.__orionLatestBriefing=welcome;addFeed('ORION',welcome,'system');document.getElementById('voiceActivation')?.classList.remove('hidden')}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
+ if(!booting){booting=true;try{await boot();const welcome=clock.greeting+' I’m ORION. I’m online and ready for you.';window.__orionLatestBriefing=welcome;addFeed('ORION',welcome,'system');document.getElementById('voiceActivation')?.classList.add('hidden')}catch(e){addFeed('ORION','Startup error: '+e.message,'system')}finally{booting=false}}
 }
 function showLogin(){if(authBusy)return;$('app').classList.add('hidden');$('login').classList.remove('hidden');user=null;conversationId=null}
 function addFeed(role,content,kind=''){const el=document.createElement('div');el.className='msg '+kind;el.innerHTML='<div class="meta">'+esc(role)+'</div>'+esc(content).replace(/\n/g,'<br>');$('feed').prepend(el)}
@@ -1557,48 +1557,7 @@ void initializeAuth();
   });
 })();
 </script>
-<script type="module">
-window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let activePlayer=null;
-  window.__orionStopSpeaking=()=>{
-    try{
-      if(activePlayer){activePlayer.pause();activePlayer.currentTime=0;activePlayer=null;}
-    }catch{}
-    try{window.speechSynthesis?.cancel()}catch{}
-    window.__orionVoiceSpeaking=false;
-    if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'LISTENING…':'VOICE READY';
-  };
-  const load=async()=>{
-    if(ttsPromise)return ttsPromise;
-    ttsPromise=(async()=>{
-      const {KokoroTTS}=await import('https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js');
-      const hasGPU=!!navigator.gpu;
-      return await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX',{
-        dtype:hasGPU?'fp32':'q8',
-        device:hasGPU?'webgpu':'wasm',
-        progress_callback:p=>{
-          if($('voiceStatus')&&p?.status==='progress')$('voiceStatus').textContent='ORION VOICE '+Math.round(p.progress||0)+'%';
-        }
-      });
-    })().catch(e=>{ttsPromise=null;throw e});
-    return ttsPromise;
-  };
-  return async(text)=>{
-    const tts=await load();
-    const audio=await tts.generate(text,{voice:'bm_george',speed:.96});
-    const blob=audio.toBlob();
-    if(currentUrl)URL.revokeObjectURL(currentUrl);
-    currentUrl=URL.createObjectURL(blob);
-    const player=new Audio(currentUrl);
-    activePlayer=player;
-    player.volume=1;
-    if($('voiceStatus'))$('voiceStatus').textContent='ORION SPEAKING';if(window.setOrionState)window.setOrionState('speaking');
-    player.onended=()=>{if(activePlayer===player)activePlayer=null;if($('voiceStatus'))$('voiceStatus').textContent='VOICE READY';if(window.setOrionState)window.setOrionState('idle')};
-    player.onpause=()=>{if(activePlayer===player&&player.ended===false){if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'LISTENING…':'VOICE READY';if(window.setOrionState)window.setOrionState('idle')}};
-    await player.play();
-    if(orionVoiceMode&&!orionVoiceBusy)setTimeout(startOrionListening,160);
-  };
-})();
-</script>
+
 <script>
 (function(){
  const presence=document.getElementById('orionPresence'), state=document.getElementById('orionState'); if(!presence)return;
@@ -1632,154 +1591,34 @@ window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let acti
   }
 }
 </style>
-<script>
-<!-- ORION INTERACTION RECOVERY -->
-(function(){
-  function bindRecovery(){
-    const command=document.getElementById('command');
-    const run=document.getElementById('run');
-    const listen=document.getElementById('voiceListen');
-    const speak=document.getElementById('voiceSpeak');
 
-    if(run && !run.dataset.orionRecoveryBound){
-      run.dataset.orionRecoveryBound='1';
-      run.addEventListener('click',async function(){
-        const v=(command?.value||'').trim();
-        if(!v)return;
-        try{
-          run.disabled=true;
-          run.dataset.recoveryState='running';
-          if(window.setOrionState)window.setOrionState('thinking');
-          if(typeof window.handleCommand==='function'){
-            await window.handleCommand(v);
-            if(command)command.value='';
-          }else{
-            throw new Error('ORION command engine is not initialized.');
-          }
-        }catch(e){
-          console.error('ORION recovery command error',e);
-          const feed=document.getElementById('feed');
-          if(feed){
-            const el=document.createElement('div');
-            el.className='msg system';
-            el.innerHTML='<div class="meta">ORION</div>'+String(e?.message||'Command failed.').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
-            feed.prepend(el);
-          }
-        }finally{
-          run.disabled=false;
-          run.dataset.recoveryState='ready';
-          if(window.setOrionState)window.setOrionState('idle');
-        }
-      },true);
-    }
 
-    if(command && !command.dataset.orionRecoveryBound){
-      command.dataset.orionRecoveryBound='1';
-      command.addEventListener('keydown',function(e){
-        if(e.key==='Enter'){
-          e.preventDefault();
-          run?.click();
-        }
-      },true);
-    }
-
-    if(listen && !listen.dataset.orionRecoveryBound){
-      listen.dataset.orionRecoveryBound='1';
-      listen.addEventListener('click',function(){
-        try{
-          if(typeof window.setupVoice==='function' && !window.__orionRecognitionReady) window.setupVoice();
-          if(typeof window.startOrionListening==='function' && window.orionVoiceMode) window.startOrionListening();
-        }catch(e){
-          console.error('ORION recovery voice error',e);
-        }
-      },true);
-    }
-
-    if(speak && !speak.dataset.orionRecoveryBound){
-      speak.dataset.orionRecoveryBound='1';
-      speak.addEventListener('click',function(){
-        try{
-          if(typeof window.speakText==='function') window.speakText(window.__orionLatestBriefing||'ORION voice is online.');
-        }catch(e){ console.error('ORION recovery speak error',e); }
-      },true);
-    }
-
-    window.__ORION_INTERACTION_RECOVERY=true;
-  }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindRecovery,{once:true});
-  else bindRecovery();
-})();
-</script>
 <script>
 (function(){
-  const SUPABASE_URL='https://bhgnzdtjapdnwrybtlwq.supabase.co';
-  const SUPABASE_KEY='sb_publishable_GtTWrR0i4fnq12EgfsnGyQ_eyHsdT6a';
-  let client=null;
-  async function getClient(){
-    if(client)return client;
-    if(!window.supabase?.createClient)throw new Error('Supabase client library is unavailable.');
-    client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,storage:window.localStorage,storageKey:'orion-auth-v3'}});
-    return client;
-  }
-  function show(text,kind='system'){
-    const feed=document.getElementById('feed');
-    if(!feed)return;
-    const el=document.createElement('div');el.className='msg '+kind;
-    const safe=String(text).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
-    el.innerHTML='<div class="meta">ORION</div>'+safe.replace(/\n/g,'<br>');
-    feed.prepend(el);
-  }
-  async function coreReply(command){
-    const run=document.getElementById('run');
-    if(run)run.disabled=true;
-    const state=window.setOrionState;
-    try{
-      state?.('thinking');
-      show('Thinking…');
-      const sb=await getClient();
-      const {data:{session},error:sessionError}=await sb.auth.getSession();
-      if(sessionError)throw sessionError;
-      if(!session)throw new Error('ORION session is not available. Please sign in again.');
-      const {data,error}=await sb.functions.invoke('orion-brain',{body:{
-        command,
-        context:{
-          currentTime:{iso:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Africa/Johannesburg'},
-          activeConversation:{currentUserMessage:command,followUpContext:true},
-          memories:[],goals:[],tasks:[],projects:[],missions:[],agentEvents:[],missionRuns:[],capabilityRequests:[],recentMessages:[],recentRecommendations:[],recentChallenges:[]
-        }
-      }});
-      if(error)throw error;
-      if(!data?.ok)throw new Error(data?.error||'ORION brain returned no usable response.');
-      const s=data.synthesis||{};
-      const reply=[s.title,s.recommendation||s.rationale||'ORION received your command.'].filter(Boolean).join(': ');
-      show(reply);
-      window.__orionLatestBriefing=reply;
-      state?.('speaking');
-      if(typeof window.speakText==='function')window.speakText(reply);
-    }catch(e){
-      console.error('ORION CORE BRIDGE ERROR',e);
-      show('Core error: '+(e?.message||String(e)));
-      state?.('idle');
-    }finally{if(run)run.disabled=false}
-  }
-  function wire(){
-    const run=document.getElementById('run'),command=document.getElementById('command');
-    if(!run||!command||run.dataset.coreBridgeBound)return;
-    run.dataset.coreBridgeBound='1';
-    run.addEventListener('click',function(e){
-      const v=command.value.trim();
-      if(!v)return;
-      e.preventDefault();e.stopImmediatePropagation();
-      coreReply(v).then(()=>{command.value=''});
-    },true);
-    command.addEventListener('keydown',function(e){
-      if(e.key==='Enter'){e.preventDefault();run.click()}
-    },true);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire,{once:true});else wire();
-  setTimeout(wire,500);
-  window.__ORION_CORE_BRIDGE=true;
+'use strict';
+const U='https://bhgnzdtjapdnwrybtlwq.supabase.co',K='sb_publishable_GtTWrR0i4fnq12EgfsnGyQ_eyHsdT6a',SK='orion-auth-v3';
+let sb=null,rec=null,voice=false,busy=false,blocked=false,speaking=false,timer=null;
+const $=id=>document.getElementById(id);
+const state=v=>{try{window.setOrionState?.(v)}catch{}};
+const vs=v=>{const e=$('voiceStatus');if(e)e.textContent=v};
+const err=(e,x)=>{try{window.Sentry?.captureException?.(e,{extra:x})}catch{}console.error('[ORION]',e,x||'')};
+function feed(role,t,kind='system'){const f=$('feed');if(!f)return;const r=document.createElement('div');r.className='msg '+kind;const m=document.createElement('div');m.className='meta';m.textContent=role;const b=document.createElement('div');b.textContent=String(t||'');r.append(m,b);f.prepend(r)}
+function latest(t){window.__orionLatestBriefing=String(t||'');window.__orionLastSpokenText=String(t||'')}
+async function client(){if(sb)return sb;if(!window.supabase?.createClient)throw new Error('Supabase client library is unavailable.');sb=window.supabase.createClient(U,K,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:localStorage,storageKey:SK}});return sb}
+async function session(){const c=await client();let r=await c.auth.getSession();if(r.error)throw r.error;let s=r.data?.session||null;if(s?.expires_at&&s.expires_at*1000-Date.now()<60000){const q=await c.auth.refreshSession();if(!q.error&&q.data?.session)s=q.data.session}if(!s)throw new Error('ORION session is missing. Please sign in again.');return s}
+async function brain(command){const s=await session();const body={command:String(command),context:{currentTime:{iso:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Africa/Johannesburg'},activeConversation:{currentUserMessage:String(command),followUpContext:true},memories:[],goals:[],tasks:[],projects:[],missions:[],agentEvents:[],missionRuns:[],capabilityRequests:[],recentMessages:[],recentRecommendations:[],recentChallenges:[]}};const r=await fetch(U+'/functions/v1/orion-brain',{method:'POST',headers:{'Content-Type':'application/json','apikey':K,'Authorization':'Bearer '+s.access_token},body:JSON.stringify(body)});const raw=await r.text();let d=null;try{d=raw?JSON.parse(raw):null}catch{}if(!r.ok)throw new Error('ORION brain HTTP '+r.status+': '+(d?.error||d?.message||raw||r.statusText));if(!d?.ok)throw new Error(d?.error||'ORION brain returned no usable response.');return d}
+async function speak(t){const clean=String(t||'').replace(/[*_#]/g,'').trim();if(!clean)return;latest(clean);speaking=true;window.__orionVoiceSpeaking=true;state('speaking');try{window.speechSynthesis?.cancel()}catch{}if(!window.speechSynthesis||!window.SpeechSynthesisUtterance){speaking=false;window.__orionVoiceSpeaking=false;vs('TTS UNAVAILABLE');state('idle');return}return new Promise(resolve=>{const u=new SpeechSynthesisUtterance(clean),voices=window.speechSynthesis.getVoices?.()||[],v=voices.find(x=>/^en-ZA/i.test(x.lang))||voices.find(x=>/^en-GB/i.test(x.lang))||voices.find(x=>/^en-US/i.test(x.lang))||voices.find(x=>/^en/i.test(x.lang));if(v)u.voice=v;u.lang=v?.lang||'en-ZA';u.rate=.96;u.pitch=.9;u.volume=1;u.onstart=()=>vs('ORION SPEAKING');u.onend=()=>{speaking=false;window.__orionVoiceSpeaking=false;vs(voice?'VOICE READY · LISTENING':'VOICE READY');state('idle');resolve()};u.onerror=()=>{speaking=false;window.__orionVoiceSpeaking=false;vs('VOICE READY');state('idle');resolve()};window.speechSynthesis.speak(u)})}
+window.speakText=speak;window.__orionStopSpeaking=()=>{try{window.speechSynthesis?.cancel()}catch{}speaking=false;window.__orionVoiceSpeaking=false};
+async function reply(command,opts={}){const v=String(command||'').trim();if(!v)return;const run=$('run');if(run)run.disabled=true;state('thinking');vs(opts.voice?'THINKING…':'BRAIN PROCESSING…');feed('YOU',v,'you');feed('ORION','Thinking…','system');try{const d=await brain(v),s=d.synthesis||{},out=[s.title,s.recommendation||s.rationale||'ORION received your command.'].filter(Boolean).join(': ');latest(out);feed('ORION',out,'system');if(typeof window.saveMessage==='function'){try{await window.saveMessage('assistant',out)}catch(e){console.warn('[ORION] memory save skipped',e)}}if(opts.voice||voice)await speak(out);else{state('idle');vs('VOICE READY')}return d}catch(e){err(e,{command:v});feed('ORION','Core error: '+(e?.message||String(e)),'system');vs('BRAIN ERROR');state('idle');if(opts.voice||voice)await speak('I hit a core error. '+(e?.message||String(e)));throw e}finally{if(run)run.disabled=false}}
+window.__orionCoreReply=reply;
+function stop(){clearTimeout(timer);if(rec){try{rec.stop()}catch{}}$('voiceListen')?.classList.remove('listening')}
+function listenLater(ms=450){clearTimeout(timer);if(!voice||busy||speaking||blocked||!rec)return;timer=setTimeout(()=>{try{rec.start()}catch{}},ms)}
+function setupRec(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){vs('VOICE INPUT UNAVAILABLE');return false}rec=new SR();rec.lang='en-ZA';rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=1;rec.onstart=()=>{vs('LISTENING…');$('voicePrompt')?.replaceChildren(document.createTextNode('LISTENING'));$('voiceListen')?.classList.add('listening');state('listening')};rec.onresult=async e=>{const t=e.results?.[0]?.[0]?.transcript?.trim();if(!t)return;busy=true;stop();vs('THINKING…');try{await reply(t,{voice:true})}catch{}finally{busy=false;listenLater(700)}};rec.onerror=e=>{$('voiceListen')?.classList.remove('listening');if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){blocked=true;voice=false;vs(e.error==='audio-capture'?'MIC NOT AVAILABLE':'MIC PERMISSION REQUIRED');state('idle');return}if(e.error!=='aborted')vs('VOICE ERROR: '+(e.error||'UNKNOWN'));listenLater(900)};rec.onend=()=>{$('voiceListen')?.classList.remove('listening');if(voice&&!busy&&!speaking&&!blocked)listenLater(300);else if(!busy)vs('VOICE READY')};return true}
+function toggle(){if(!rec&&!setupRec())return;if(voice){voice=false;blocked=false;stop();vs('VOICE READY');$('voicePrompt')?.replaceChildren(document.createTextNode('TAP TO TALK'));state('idle');return}voice=true;blocked=false;vs('MIC STARTING…');$('voicePrompt')?.replaceChildren(document.createTextNode('LISTENING'));try{rec.start()}catch{listenLater(500)}}
+window.__orionToggleVoice=toggle;
+function bind(){const run=$('run'),cmd=$('command'),mic=$('voiceListen'),sp=$('voiceSpeak');if(run&&!run.dataset.orionRuntime){run.dataset.orionRuntime='1';run.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();const v=cmd?.value?.trim();if(!v)return;reply(v).then(()=>{if(cmd)cmd.value=''}).catch(()=>{})},true)}if(cmd&&!cmd.dataset.orionRuntime){cmd.dataset.orionRuntime='1';cmd.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();run?.click()}},true)}if(mic&&!mic.dataset.orionRuntime){mic.dataset.orionRuntime='1';mic.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();toggle()},true)}if(sp&&!sp.dataset.orionRuntime){sp.dataset.orionRuntime='1';sp.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();speak(window.__orionLatestBriefing||'ORION is online and ready.')},true)}}
+window.addEventListener('error',e=>err(e.error||new Error(e.message||'Unknown browser error'),{source:'window'}));window.addEventListener('unhandledrejection',e=>err(e.reason instanceof Error?e.reason:new Error(String(e.reason)),{source:'unhandledrejection'}));
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();setTimeout(bind,250);setTimeout(bind,1000);window.__ORION_RUNTIME_V2=true;console.log('[ORION] runtime v2 installed')
 })();
 </script>
 </body>
