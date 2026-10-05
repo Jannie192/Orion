@@ -1473,7 +1473,55 @@ document.querySelectorAll('.quick button').forEach(b=>b.onclick=()=>{$('command'
 function initializeAuth(){ $('authmsg').textContent='Checking ORION session…'; }
 window.__ORION_MAIN_READY=true;
 void initializeAuth();
-</script><script type="module">
+</script><script>
+(function(){
+  function orionFailsafeWire(){
+    const run=document.getElementById('run');
+    const command=document.getElementById('command');
+    const listen=document.getElementById('voiceListen');
+    const status=document.getElementById('authmsg');
+    if(run && typeof run.onclick!=='function'){
+      run.onclick=async function(){
+        const v=(command?.value||'').trim();
+        if(!v)return;
+        run.disabled=true;
+        try{
+          if(typeof handleCommand!=='function') throw new Error('ORION command engine did not initialize.');
+          await handleCommand(v);
+          if(command)command.value='';
+        }catch(e){
+          console.error('ORION failsafe command error',e);
+          const feed=document.getElementById('feed');
+          if(typeof addFeed==='function' && feed) addFeed('ORION','Command failed: '+(e?.message||'Unknown error'),'system');
+          else if(status) status.textContent='ORION startup error: '+(e?.message||'Command engine unavailable.');
+        }finally{run.disabled=false}
+      };
+    }
+    if(listen && typeof listen.onclick!=='function'){
+      listen.onclick=function(){
+        try{
+          if(typeof setupVoice!=='function') throw new Error('ORION voice engine did not initialize.');
+          if(!window.orionRecognition && typeof setupVoice==='function') setupVoice();
+          if(typeof startOrionListening!=='function') throw new Error('ORION listening engine did not initialize.');
+          startOrionListening();
+        }catch(e){
+          console.error('ORION failsafe voice error',e);
+          const vs=document.getElementById('voiceStatus');
+          if(vs)vs.textContent='VOICE ERROR';
+          if(status)status.textContent='ORION voice error: '+(e?.message||'Voice engine unavailable.');
+        }
+      };
+    }
+  }
+  orionFailsafeWire();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',orionFailsafeWire);
+  setTimeout(orionFailsafeWire,500);
+  window.addEventListener('error',e=>{
+    if(e?.error) console.error('ORION runtime error',e.error);
+  });
+})();
+</script>
+<script type="module">
 window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let activePlayer=null;
   window.__orionStopSpeaking=()=>{
     try{
