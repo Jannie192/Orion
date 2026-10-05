@@ -1062,18 +1062,6 @@ async function speakText(text){
   if(window.setOrionState)window.setOrionState('speaking');
   const clean=String(text).replace(/[*_#]/g,'').trim();
   window.__orionLastSpokenText=clean;
-  if(window.__orionKokoroSpeak){
-    try{
-      if($('voiceStatus'))$('voiceStatus').textContent='ORION VOICE LOADING';
-      await window.__orionKokoroSpeak(clean);
-      window.__orionVoiceSpeaking=false;
-      if($('voiceStatus'))$('voiceStatus').textContent=orionVoiceMode?'VOICE READY · LISTENING':'VOICE READY';
-      if(orionVoiceMode&&!orionVoiceBusy)setTimeout(startOrionListening,350);
-      return;
-    }catch(e){
-      console.warn('Kokoro voice failed, using browser fallback:',e);
-    }
-  }
   if(!('speechSynthesis' in window)){if($('voiceStatus'))$('voiceStatus').textContent='TTS NOT AVAILABLE';return}
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(clean);
