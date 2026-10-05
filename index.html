@@ -1339,4 +1339,11 @@ async function promoteDecisionToMission(card,decision,recommendation){
 }
 async function watchResearchRequest(requestId,command,context,card){
   if(!requestId)return;
+
+// ORION auth/UI event wiring
+document.getElementById('signin')?.addEventListener('click',()=>window.__orionSignIn());
+document.getElementById('password')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();window.__orionSignIn();}});
+document.getElementById('email')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('password')?.focus();}});
+document.getElementById('logout')?.addEventListener('click',async()=>{try{await sb?.auth.signOut()}catch(e){console.error('ORION sign-out error',e)}});
+
 <!-- Vercel deployment trigger -->
