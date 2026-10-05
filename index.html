@@ -1613,21 +1613,9 @@ window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let acti
 })();
 </script>
 
-<script>
-(function(){
-  function detachVoiceControls(){
-    const el=document.querySelector('.voice-controls');
-    if(el && el.parentElement!==document.body){
-      document.body.appendChild(el);
-      el.classList.add('voice-detached');
-    }
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(detachVoiceControls,0));
-  else setTimeout(detachVoiceControls,0);
-})();
-</script>
+<!-- Voice controls remain inside the authenticated ORION app so they stay hidden on the sign-in screen. -->
 <style id="orion-interaction-recovery">
-/* Final interaction override: voice controls stay detached from the core. */
+/* Final interaction override: voice controls stay away from the core without leaving the authenticated app. */
 .voice-controls.voice-detached,.voice-controls{
   position:fixed!important;
   left:14px!important;
