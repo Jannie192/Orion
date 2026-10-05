@@ -1711,5 +1711,76 @@ window.__orionKokoroSpeak=(()=>{let ttsPromise=null;let currentUrl=null;let acti
   else bindRecovery();
 })();
 </script>
+<script>
+(function(){
+  const SUPABASE_URL='https://bhgnzdtjapdnwrybtlwq.supabase.co';
+  const SUPABASE_KEY='sb_publishable_GtTWrR0i4fnq12EgfsnGyQ_eyHsdT6a';
+  let client=null;
+  async function getClient(){
+    if(client)return client;
+    if(!window.supabase?.createClient)throw new Error('Supabase client library is unavailable.');
+    client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,storage:window.localStorage,storageKey:'orion-auth-v3'}});
+    return client;
+  }
+  function show(text,kind='system'){
+    const feed=document.getElementById('feed');
+    if(!feed)return;
+    const el=document.createElement('div');el.className='msg '+kind;
+    const safe=String(text).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+    el.innerHTML='<div class="meta">ORION</div>'+safe.replace(/\n/g,'<br>');
+    feed.prepend(el);
+  }
+  async function coreReply(command){
+    const run=document.getElementById('run');
+    if(run)run.disabled=true;
+    const state=window.setOrionState;
+    try{
+      state?.('thinking');
+      show('Thinking…');
+      const sb=await getClient();
+      const {data:{session},error:sessionError}=await sb.auth.getSession();
+      if(sessionError)throw sessionError;
+      if(!session)throw new Error('ORION session is not available. Please sign in again.');
+      const {data,error}=await sb.functions.invoke('orion-brain',{body:{
+        command,
+        context:{
+          currentTime:{iso:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'Africa/Johannesburg'},
+          activeConversation:{currentUserMessage:command,followUpContext:true},
+          memories:[],goals:[],tasks:[],projects:[],missions:[],agentEvents:[],missionRuns:[],capabilityRequests:[],recentMessages:[],recentRecommendations:[],recentChallenges:[]
+        }
+      }});
+      if(error)throw error;
+      if(!data?.ok)throw new Error(data?.error||'ORION brain returned no usable response.');
+      const s=data.synthesis||{};
+      const reply=[s.title,s.recommendation||s.rationale||'ORION received your command.'].filter(Boolean).join(': ');
+      show(reply);
+      window.__orionLatestBriefing=reply;
+      state?.('speaking');
+      if(typeof window.speakText==='function')window.speakText(reply);
+    }catch(e){
+      console.error('ORION CORE BRIDGE ERROR',e);
+      show('Core error: '+(e?.message||String(e)));
+      state?.('idle');
+    }finally{if(run)run.disabled=false}
+  }
+  function wire(){
+    const run=document.getElementById('run'),command=document.getElementById('command');
+    if(!run||!command||run.dataset.coreBridgeBound)return;
+    run.dataset.coreBridgeBound='1';
+    run.addEventListener('click',function(e){
+      const v=command.value.trim();
+      if(!v)return;
+      e.preventDefault();e.stopImmediatePropagation();
+      coreReply(v).then(()=>{command.value=''});
+    },true);
+    command.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){e.preventDefault();run.click()}
+    },true);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire,{once:true});else wire();
+  setTimeout(wire,500);
+  window.__ORION_CORE_BRIDGE=true;
+})();
+</script>
 </body>
 </html>
